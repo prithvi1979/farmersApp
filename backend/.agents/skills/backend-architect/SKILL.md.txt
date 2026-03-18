@@ -1,0 +1,23 @@
+---
+name: farmers-backend-architect
+description: Local-first Node/Express/MongoDB Atlas architect for Farmers App.
+---
+# Farmers App Backend - Local Development Phase
+
+## Current Goal
+Build and test a REST API on localhost:3000 to serve a React Native frontend.
+
+## Tech Stack
+- **Engine:** Node.js + Express
+- **DB:** MongoDB Atlas (Cloud) via Mongoose
+- **Testing:** Localhost testing via Postman/Thunder Client
+
+## Local-to-Mobile Requirements
+- **CORS:** Enable `cors()` middleware so the React Native app can talk to the server.
+- **IP Binding:** Use `0.0.0.0` or your local IP (e.g., 192.168.x.x) if testing on a physical phone, not just `localhost`.
+- **Environment:** Use a `.env` file for the `MONGODB_URI`.
+
+## Development Standards
+- Use `nodemon` for auto-restarts.
+- Structured Response: Always return `{ success: true, data: ... }` or `{ success: false, error: ... }`.
+- Log every request to the console for easy debugging.
