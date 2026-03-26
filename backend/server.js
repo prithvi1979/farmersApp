@@ -6,6 +6,9 @@ const mongoose = require('mongoose');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust the proxy (Render, Heroku, Nginx) to correctly populate req.ip
+app.set('trust proxy', 1);
+
 
 // Connect to Database
 const connectDB = require('./config/db');

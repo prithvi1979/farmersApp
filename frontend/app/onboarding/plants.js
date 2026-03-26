@@ -1,59 +1,112 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const PLANTS_DATA = {
-    Apartment: [
-        { id: '1', name: 'Aloe Vera', icon: 'leaf' },
-        { id: '2', name: 'Mint', icon: 'leaf-maple' },
-        { id: '3', name: 'Petunia', icon: 'flower' },
-        { id: '4', name: 'Basil', icon: 'seed' },
-        { id: '5', name: 'Snake Plant', icon: 'grass' },
-    ],
-    Gardener: [
-        { id: '1', name: 'Tomato', icon: 'food-apple' },
-        { id: '2', name: 'Marigold', icon: 'flower' },
-        { id: '3', name: 'Chili', icon: 'pepper-hot' },
-        { id: '4', name: 'Rose', icon: 'flower-rose' },
-        { id: '5', name: 'Brinjal', icon: 'food-croissant' },
-    ],
-    Professional: [
-        { id: '1', name: 'Wheat', icon: 'barley' },
-        { id: '2', name: 'Rice', icon: 'grass' },
-        { id: '3', name: 'Cotton', icon: 'cloud' },
-        { id: '4', name: 'Sugarcane', icon: 'bamboo' },
-        { id: '5', name: 'Corn', icon: 'corn' },
-    ]
-};
+const CATEGORIES = [
+    {
+        title: 'Flowers',
+        items: [
+            { id: 'f1', name: 'Rose', icon: 'flower-tulip' },
+            { id: 'f2', name: 'Marigold', icon: 'flower' },
+            { id: 'f3', name: 'Hibiscus', icon: 'flower-outline' },
+            { id: 'f4', name: 'Sunflower', icon: 'white-balance-sunny' },
+            { id: 'f5', name: 'Jasmine', icon: 'flower-poppy' },
+            { id: 'f6', name: 'Lotus', icon: 'tree' },
+            { id: 'f7', name: 'Tulip', icon: 'flower-tulip-outline' },
+            { id: 'f8', name: 'Lily', icon: 'leaf' },
+        ]
+    },
+    {
+        title: 'Vegetables',
+        items: [
+            { id: 'v1', name: 'Tomato', icon: 'food-apple' },
+            { id: 'v2', name: 'Potato', icon: 'dots-grid' },
+            { id: 'v3', name: 'Onion', icon: 'shape-circle-plus' },
+            { id: 'v4', name: 'Brinjal', icon: 'food-croissant' },
+            { id: 'v5', name: 'Carrot', icon: 'carrot' },
+            { id: 'v6', name: 'Spinach', icon: 'leaf-maple' },
+            { id: 'v7', name: 'Cabbage', icon: 'tree-outline' },
+            { id: 'v8', name: 'Chili', icon: 'pepper-hot' },
+        ]
+    },
+    {
+        title: 'Crops',
+        items: [
+            { id: 'c1', name: 'Rice', icon: 'grass' },
+            { id: 'c2', name: 'Wheat', icon: 'barley' },
+            { id: 'c3', name: 'Maize', icon: 'corn' },
+            { id: 'c4', name: 'Cotton', icon: 'cloud' },
+            { id: 'c5', name: 'Sugarcane', icon: 'bamboo' },
+            { id: 'c6', name: 'Jute', icon: 'grass' },
+            { id: 'c7', name: 'Soybean', icon: 'seed' },
+            { id: 'c8', name: 'Barley', icon: 'barley-off' },
+        ]
+    }
+];
 
 export default function PlantsScreen() {
     const router = useRouter();
     const { persona } = useLocalSearchParams();
     const [selectedPlants, setSelectedPlants] = useState([]);
+    const [isSaving, setIsSaving] = useState(false);
 
-    // Default to Gardener if params are missing for some reason
-    const plantsList = PLANTS_DATA[persona] || PLANTS_DATA['Gardener'];
-
-    const handleTogglePlant = (plantId) => {
+    const handleTogglePlant = (plant) => {
         setSelectedPlants(prev => {
-            if (prev.includes(plantId)) {
-                return prev.filter(id => id !== plantId);
+            const isSelected = prev.some(p => p.id === plant.id);
+            if (isSelected) {
+                return prev.filter(p => p.id !== plant.id);
             }
-            if (prev.length < 4) {
-                return [...prev, plantId];
+            if (prev.length < 8) { // Allow up to 8 items total across all categories
+                return [...prev, plant];
             }
-            return prev; // Max 4 reached
+            return prev;
         });
     };
 
-    const handleFinish = () => {
-        const selectedData = plantsList.filter(p => selectedPlants.includes(p.id));
-        console.log("Onboarding Complete", {
-            persona,
-            plants: selectedData
-        });
-        router.replace('/(tabs)');
+    const handleFinish = async () => {
+        if (selectedPlants.length === 0) return;
+        
+        try {
+            setIsSaving(true);
+            
+            // Get or generate deviceId persistently representing this guest profile
+            let deviceId = await AsyncStorage.getItem('deviceId');
+            if (!deviceId) {
+                deviceId = 'device_' + Date.now() + Math.random().toString(36).substring(7);
+                await AsyncStorage.setItem('deviceId', deviceId);
+            }
+
+            const payload = {
+                deviceId,
+                language: 'en',
+                persona: persona || 'Gardener',
+                chosenPlants: selectedPlants.map(plant => plant.name)
+            };
+
+            const response = await fetch('https://farmersapp-333z.onrender.com/api/users/onboard', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                router.replace('/(tabs)');
+            } else {
+                Alert.alert("Error", data.error || "Failed to save profile");
+                setIsSaving(false);
+            }
+
+        } catch (error) {
+            console.error("Onboarding API Error:", error);
+            Alert.alert("Error", "Network error while saving profile. Please check your connection.");
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -65,40 +118,54 @@ export default function PlantsScreen() {
                     </View>
 
                     <Text style={styles.title}>What are you growing?</Text>
-                    <Text style={styles.subtitle}>Select up to 4 items.</Text>
+                    <Text style={styles.subtitle}>Select the plants you want to track.</Text>
 
-                    <View style={styles.grid}>
-                        {plantsList.map((plant) => {
-                            const isSelected = selectedPlants.includes(plant.id);
-                            return (
-                                <TouchableOpacity
-                                    key={plant.id}
-                                    style={[styles.plantCard, isSelected && styles.plantCardActive]}
-                                    onPress={() => handleTogglePlant(plant.id)}
-                                >
-                                    <View style={[styles.iconWrapper, isSelected && styles.iconWrapperActive]}>
-                                        <MaterialCommunityIcons
-                                            name={plant.icon}
-                                            size={40}
-                                            color={isSelected ? '#ffffff' : '#4caf50'}
-                                        />
-                                    </View>
-                                    <Text style={[styles.plantName, isSelected && styles.plantNameActive]}>
-                                        {plant.name}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
+                    {CATEGORIES.map(category => (
+                        <View key={category.title} style={styles.categorySection}>
+                            <Text style={styles.categoryTitle}>{category.title}</Text>
+                            <View style={styles.grid}>
+                                {category.items.map((plant) => {
+                                    const isSelected = selectedPlants.some(p => p.id === plant.id);
+                                    return (
+                                        <TouchableOpacity
+                                            key={plant.id}
+                                            style={[styles.plantCard, isSelected && styles.plantCardActive]}
+                                            onPress={() => handleTogglePlant(plant)}
+                                        >
+                                            <View style={[styles.iconWrapper, isSelected && styles.iconWrapperActive]}>
+                                                <MaterialCommunityIcons
+                                                    name={plant.icon}
+                                                    size={24}
+                                                    color={isSelected ? '#ffffff' : '#4caf50'}
+                                                />
+                                            </View>
+                                            <Text 
+                                                style={[styles.plantName, isSelected && styles.plantNameActive]}
+                                                numberOfLines={1}
+                                                adjustsFontSizeToFit
+                                            >
+                                                {plant.name}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        </View>
+                    ))}
+                    
                 </ScrollView>
 
                 <View style={styles.footer}>
                     <TouchableOpacity
                         style={[styles.finishButton, selectedPlants.length === 0 && styles.finishButtonDisabled]}
                         onPress={handleFinish}
-                        disabled={selectedPlants.length === 0}
+                        disabled={selectedPlants.length === 0 || isSaving}
                     >
-                        <Text style={styles.finishText}>Finish Setup</Text>
+                        {isSaving ? (
+                            <ActivityIndicator color="#ffffff" />
+                        ) : (
+                            <Text style={styles.finishText}>Finish Setup</Text>
+                        )}
                     </TouchableOpacity>
                 </View>
             </View>
@@ -114,12 +181,12 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        padding: 24,
+        padding: 16,
         paddingBottom: 40,
     },
     header: {
-        paddingTop: 40,
-        paddingBottom: 20,
+        paddingTop: 20,
+        paddingBottom: 10,
         alignItems: 'center',
     },
     progressText: {
@@ -129,35 +196,46 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
     },
     title: {
-        fontSize: 28,
+        fontSize: 26,
         fontWeight: 'bold',
         color: '#1b5e20',
-        marginBottom: 8,
+        marginBottom: 6,
     },
     subtitle: {
-        fontSize: 16,
+        fontSize: 15,
         color: '#666',
-        marginBottom: 32,
+        marginBottom: 20,
+    },
+    categorySection: {
+        marginBottom: 24,
+    },
+    categoryTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#2e7d32',
+        marginBottom: 12,
+        paddingLeft: 4,
     },
     grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 16,
-        justifyContent: 'space-between',
+        justifyContent: 'flex-start',
+        gap: 8,
     },
     plantCard: {
-        width: '47%',
+        width: '23%', 
         backgroundColor: '#ffffff',
-        padding: 16,
-        borderRadius: 16,
+        paddingVertical: 12,
+        paddingHorizontal: 4,
+        borderRadius: 12,
         alignItems: 'center',
         borderWidth: 1,
         borderColor: '#e8f5e9',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
-        shadowRadius: 6,
-        elevation: 2,
+        shadowRadius: 3,
+        elevation: 1,
         marginBottom: 8,
     },
     plantCardActive: {
@@ -165,19 +243,19 @@ const styles = StyleSheet.create({
         borderColor: '#4caf50',
     },
     iconWrapper: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         backgroundColor: '#f1f8e9',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 8,
     },
     iconWrapperActive: {
         backgroundColor: '#4caf50',
     },
     plantName: {
-        fontSize: 16,
+        fontSize: 12,
         fontWeight: '600',
         color: '#333',
         textAlign: 'center',
@@ -186,15 +264,15 @@ const styles = StyleSheet.create({
         color: '#1b5e20',
     },
     footer: {
-        padding: 24,
+        padding: 20,
         backgroundColor: '#ffffff',
         borderTopWidth: 1,
         borderTopColor: '#f0f0f0',
     },
     finishButton: {
         backgroundColor: '#2e7d32',
-        paddingVertical: 18,
-        borderRadius: 16,
+        paddingVertical: 16,
+        borderRadius: 14,
         alignItems: 'center',
         shadowColor: '#2e7d32',
         shadowOffset: { width: 0, height: 4 },

@@ -10,11 +10,30 @@ exports.onboardUser = async (req, res) => {
       return res.status(400).json({ success: false, error: 'deviceId is required' });
     }
 
-    // Capture IP
-    // Note: In production behind a proxy (like Nginx/Heroku), use req.headers['x-forwarded-for'] or req.ip with trust proxy enabled
-    const ipAddress = req.ip || req.connection.remoteAddress;
+    // Capture IP (handling proxies like Render)
+    let ipAddress = req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress;
+    if (ipAddress && ipAddress.includes(',')) {
+      ipAddress = ipAddress.split(',')[0].trim();
+    }
 
-    // TODO: In a real app, we would use a service like geoip-lite or an external API here to convert `ipAddress` to `location.lat` / `location.lng`. For now, we'll just save the IP.
+    // Convert IP to Location Data automatically
+    let locationData = null;
+    if (ipAddress && ipAddress !== '127.0.0.1' && ipAddress !== '::1') {
+      try {
+        const geoRes = await fetch(`http://ip-api.com/json/${ipAddress}`);
+        const geoData = await geoRes.json();
+        if (geoData.status === 'success') {
+          locationData = {
+            lat: geoData.lat,
+            lng: geoData.lon,
+            city: geoData.city,
+            state: geoData.regionName
+          };
+        }
+      } catch (e) {
+        console.error('GeoIP Fetch Error:', e.message);
+      }
+    }
 
     let user = await User.findOne({ deviceId });
 
@@ -24,6 +43,7 @@ exports.onboardUser = async (req, res) => {
       user.persona = persona || user.persona;
       user.chosenPlants = chosenPlants || user.chosenPlants;
       user.ipAddress = ipAddress;
+      if (locationData) user.location = locationData;
       await user.save();
       return res.status(200).json({ success: true, data: user, message: 'Guest profile updated' });
     }
@@ -35,6 +55,7 @@ exports.onboardUser = async (req, res) => {
       persona,
       chosenPlants: chosenPlants || [],
       ipAddress,
+      location: locationData || undefined,
       status: 'guest'
     });
 
