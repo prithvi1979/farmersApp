@@ -5,9 +5,10 @@ import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import HeaderDropdown from '../../components/HeaderDropdown';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ⚠️  Change this to your machine's local IP when backend goes live online
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 
 export default function HomeScreen() {
     const router = useRouter();
@@ -22,8 +23,13 @@ export default function HomeScreen() {
     useEffect(() => {
         const fetchWeather = async () => {
             try {
-                // Try fetching weather by IP (works even without onboarding)
-                const res = await fetch(`${API_BASE_URL}/weather/by-ip`);
+                // Try fetching weather by saved device profile first, fallback to IP
+                const deviceId = await AsyncStorage.getItem('deviceId');
+                const endpoint = deviceId 
+                    ? `${API_BASE_URL}/weather/${deviceId}` 
+                    : `${API_BASE_URL}/weather/by-ip`;
+
+                const res = await fetch(endpoint);
                 const json = await res.json();
                 if (json.success) {
                     setWeather(json.data);
@@ -134,8 +140,8 @@ export default function HomeScreen() {
                     {/* Weather Widget */}
                     <View style={styles.weatherWidgetCard}>
                         <View style={styles.widgetHeaderRow}>
-                            <Text style={styles.weatherWidgetTitle}>
-                                {weather?.city || 'Weather'}
+                            <Text style={styles.weatherWidgetTitle} numberOfLines={1} adjustsFontSizeToFit>
+                                {weather?.city && weather?.state ? `${weather.city}, ${weather.state}` : (weather?.city || 'Weather')}
                             </Text>
                             <MaterialCommunityIcons
                                 name={weather?.icon || 'weather-partly-cloudy'}
@@ -155,9 +161,16 @@ export default function HomeScreen() {
                                         ? weather.description.charAt(0).toUpperCase() + weather.description.slice(1)
                                         : 'Sunny'}
                                 </Text>
-                                <Text style={styles.weatherWidgetLow}>
-                                    Low {weather ? `${weather.tempMin}°C` : '22°C'}
-                                </Text>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <MaterialCommunityIcons name="water-percent" size={12} color="#64B5F6" />
+                                        <Text style={{ fontSize: 10, color: '#64B5F6', marginLeft: 2 }}>{weather?.humidity ?? '--'}%</Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <MaterialCommunityIcons name="weather-windy" size={12} color="#64B5F6" />
+                                        <Text style={{ fontSize: 10, color: '#64B5F6', marginLeft: 2 }}>{weather?.windSpeed ?? '--'} m/s</Text>
+                                    </View>
+                                </View>
                             </>
                         )}
                     </View>

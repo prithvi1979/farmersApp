@@ -131,7 +131,8 @@ exports.getWeather = async (req, res) => {
 // No deviceId required. Resolves the caller's own IP for a quick weather lookup.
 exports.getWeatherByIp = async (req, res) => {
   try {
-    const ip = req.ip || req.connection.remoteAddress;
+    let ip = req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress;
+    if (ip && ip.includes(',')) ip = ip.split(',')[0].trim();
     const geo = await resolveIpToCoords(ip) || DEV_FALLBACK;
 
     const OWM_KEY = process.env.OPENWEATHER_API_KEY;

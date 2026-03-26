@@ -22,7 +22,7 @@ exports.diagnosePlant = async (req, res) => {
 
         const prompt = "You are an expert plant pathologist. Analyze this plant image and return ONLY a valid JSON object with two keys: 'disease' (string — name of the disease or 'Healthy' if none found) and 'cure' (string — recommended treatment or care steps, max 3 sentences). Do not include markdown or extra text. Example: {\"disease\": \"Tomato Blight\", \"cure\": \"Remove infected leaves and apply copper fungicide.\"}";
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -33,8 +33,8 @@ exports.diagnosePlant = async (req, res) => {
                         parts: [
                             { text: prompt },
                             {
-                                inline_data: {
-                                    mime_type: mimeType || "image/jpeg",
+                                inlineData: {
+                                    mimeType: mimeType || "image/jpeg",
                                     data: base64Data
                                 }
                             }
