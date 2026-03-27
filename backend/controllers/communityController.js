@@ -52,10 +52,10 @@ exports.getPosts = async (req, res) => {
 // Purpose: Ask a question
 exports.createPost = async (req, res) => {
   try {
-    const { authorId, question, imageUrl, cropTag } = req.body;
+    const { authorId, title, question, imageUrl, cropTag } = req.body;
 
-    if (!authorId || !question) {
-       return res.status(400).json({ success: false, error: 'authorId and question are required' });
+    if (!authorId || !title || !question) {
+       return res.status(400).json({ success: false, error: 'authorId, title, and question are required' });
     }
 
     // Grab their name, photo, and location automatically from their profile
@@ -70,6 +70,7 @@ exports.createPost = async (req, res) => {
         authorId,
         authorName: user.name || (user.status === 'guest' ? 'Guest Farmer' : 'Anonymous'),
         authorPhoto: user.photoUrl,
+        title,
         question,
         imageUrl,
         cropTag,
@@ -83,5 +84,59 @@ exports.createPost = async (req, res) => {
   } catch (error) {
     console.error('Error creating post:', error);
     res.status(500).json({ success: false, error: 'Server error creating post' });
+  }
+};
+
+// GET /api/community/post/:id
+// Purpose: Fetch a single community thread and its answers
+exports.getPostById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const post = await Post.findById(id);
+    if (!post) {
+      return res.status(404).json({ success: false, error: 'Post not found' });
+    }
+    res.status(200).json({ success: true, data: post });
+  } catch (error) {
+    console.error('Error fetching post:', error);
+    res.status(500).json({ success: false, error: 'Server error fetching post' });
+  }
+};
+
+// POST /api/community/post/:id/answer
+// Purpose: Add an answer to an existing thread
+exports.answerPost = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { authorId, text } = req.body;
+
+    if (!authorId || !text) {
+      return res.status(400).json({ success: false, error: 'authorId and text are required' });
+    }
+
+    const user = await User.findOne({ deviceId: authorId });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User profile not found' });
+    }
+
+    const post = await Post.findById(id);
+    if (!post) {
+      return res.status(404).json({ success: false, error: 'Post not found' });
+    }
+
+    const newAnswer = {
+      authorId,
+      authorName: user.name || (user.status === 'guest' ? 'Guest Farmer' : 'Anonymous'),
+      text,
+      createdAt: new Date()
+    };
+
+    post.answers.push(newAnswer);
+    await post.save();
+
+    res.status(201).json({ success: true, data: post, message: 'Answer posted successfully' });
+  } catch (error) {
+    console.error('Error answering post:', error);
+    res.status(500).json({ success: false, error: 'Server error answering post' });
   }
 };
