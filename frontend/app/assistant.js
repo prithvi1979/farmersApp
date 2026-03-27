@@ -190,6 +190,7 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         padding: 12,
+        paddingBottom: Platform.OS === 'android' ? 32 : 12, // Adds space for Android bottom nav
         backgroundColor: '#fff',
         borderTopWidth: 1,
         borderTopColor: '#eee',
@@ -198,10 +199,11 @@ const styles = StyleSheet.create({
     textInput: {
         flex: 1,
         backgroundColor: '#f5f5f5',
-        borderRadius: 20,
+        borderRadius: 16,
         paddingHorizontal: 16,
-        paddingVertical: 10,
-        maxHeight: 100,
+        paddingVertical: 14,
+        minHeight: 52, // Taller default height
+        maxHeight: 150, // Allows it to expand more over multiple lines
         fontSize: 15,
         color: '#333',
     },
