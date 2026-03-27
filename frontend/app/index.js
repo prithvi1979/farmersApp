@@ -1,13 +1,41 @@
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LanguageSelectionScreen() {
     const router = useRouter();
+    const [isChecking, setIsChecking] = useState(true);
+
+    useEffect(() => {
+        const checkOnboarding = async () => {
+            try {
+                const deviceId = await AsyncStorage.getItem('deviceId');
+                if (deviceId) {
+                    router.replace('/(tabs)');
+                } else {
+                    setIsChecking(false);
+                }
+            } catch (error) {
+                console.error('Error checking onboarding status:', error);
+                setIsChecking(false);
+            }
+        };
+        checkOnboarding();
+    }, []);
 
     const handleSelectLanguage = (lang) => {
         // In a real app we would save this to context or storage.
         router.push('/onboarding/persona');
     };
+
+    if (isChecking) {
+        return (
+            <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color="#4caf50" />
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.safeArea}>

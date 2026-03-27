@@ -1,3 +1,5 @@
+const User = require('../models/User');
+
 exports.diagnosePlant = async (req, res) => {
     try {
         const { image, mimeType } = req.body;
@@ -77,6 +79,66 @@ exports.diagnosePlant = async (req, res) => {
         
     } catch (error) {
         console.error('Diagnosis Error:', error);
+        res.status(500).json({ success: false, error: 'Internal Server Error' });
+    }
+};
+
+exports.chat = async (req, res) => {
+    try {
+        const { message, deviceId } = req.body;
+
+        if (!message || !deviceId) {
+            return res.status(400).json({ success: false, error: 'Message and deviceId are required' });
+        }
+
+        const apiKey = process.env.GROQ_API_KEY;
+        if (!apiKey) {
+            return res.status(500).json({ success: false, error: 'GROQ_API_KEY is not configured' });
+        }
+
+        // Fetch User context
+        const user = await User.findOne({ deviceId });
+        
+        // Build Persona context string
+        let contextString = "You are a helpful agronomy AI assistant.";
+        if (user) {
+            const persona = user.persona || "Farmer";
+            const plants = user.chosenPlants && user.chosenPlants.length > 0 ? user.chosenPlants.join(', ') : "various crops";
+            const location = user.location && user.location.city ? `${user.location.city}, ${user.location.state}` : "their local region";
+            
+            contextString = `You are a highly knowledgeable agronomy AI assistant. The user is a ${persona} located in ${location}, currently growing: ${plants}. Provide brief, expert, and actionable farming or gardening advice tailored to their specific crops and location. Do not use markdown if possible, keep it to plain text arrays or short paragraphs.`;
+        }
+
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'llama3-8b-8192',
+                messages: [
+                    { role: 'system', content: contextString },
+                    { role: 'user', content: message }
+                ],
+                max_tokens: 500,
+                temperature: 0.7
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error('Groq API Error:', data);
+            return res.status(500).json({ success: false, error: data.error?.message || 'Failed to communicate with AI' });
+        }
+
+        const aiMessage = data.choices[0].message.content;
+
+        return res.json({ success: true, response: aiMessage });
+
+    } catch (error) {
+        console.error('Chat AI Error:', error);
         res.status(500).json({ success: false, error: 'Internal Server Error' });
     }
 };

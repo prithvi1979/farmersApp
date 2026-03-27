@@ -7,4 +7,9 @@ const aiController = require('../controllers/aiController');
 // @access  Public
 router.post('/diagnose', aiController.diagnosePlant);
 
+// @route   POST /api/ai/chat
+// @desc    Chat with AI assistant using Groq Llama 3
+// @access  Public
+router.post('/chat', aiController.chat);
+
 module.exports = router;

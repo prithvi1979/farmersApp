@@ -55,9 +55,8 @@ export default function HomeScreen() {
 
             const result = await ImagePicker.launchCameraAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
-                aspect: [4, 3],
-                quality: 0.5, // Low quality to keep base64 small
+                allowsEditing: false, // Disabled to prevent the Android "Crop Grid" freeze
+                quality: 0.2, // Extremely low quality safely prevents ImagePicker crashes
                 base64: true,
             });
 
@@ -108,7 +107,7 @@ export default function HomeScreen() {
                             <MaterialCommunityIcons name="sprout" size={30} color="#fff" />
                         </View>
                         <Text style={styles.logoText}>AgriGrow</Text>
-                        <TouchableOpacity style={styles.assistantButton}>
+                        <TouchableOpacity style={styles.assistantButton} onPress={() => router.push('/assistant')}>
                             <MaterialCommunityIcons name="robot-outline" size={20} color="#00C853" style={{ marginRight: 6 }} />
                             <Text style={styles.assistantButtonText}>Assistant</Text>
                         </TouchableOpacity>
