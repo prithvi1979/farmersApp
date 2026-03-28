@@ -23,6 +23,7 @@ export default function HomeScreen() {
 
     const [activeCrops, setActiveCrops] = useState([]);
     const [dueTasks, setDueTasks] = useState([]);
+    const [hasAnyTasksConfigured, setHasAnyTasksConfigured] = useState(false);
     const [loadingTasks, setLoadingTasks] = useState(true);
 
     useEffect(() => {
@@ -61,7 +62,10 @@ export default function HomeScreen() {
                 
                 // Extract all due tasks from all crops
                 let allDueTasks = [];
+                let anyTasks = false;
+                
                 json.data.forEach(crop => {
+                    if (crop.totalTasksCount > 0) anyTasks = true;
                     if (crop.dueTasks) {
                         const cropTasks = crop.dueTasks.map(t => ({
                             ...t, 
@@ -73,6 +77,7 @@ export default function HomeScreen() {
                 });
                 
                 setDueTasks(allDueTasks);
+                setHasAnyTasksConfigured(anyTasks);
             }
         } catch (error) {
             console.error('Error fetching crops for home:', error);
@@ -248,7 +253,7 @@ export default function HomeScreen() {
                         
                         {loadingTasks ? (
                             <ActivityIndicator size="small" color="#00C853" style={{ marginVertical: 10 }} />
-                        ) : activeCrops.length === 0 ? (
+                        ) : (activeCrops.length === 0 || !hasAnyTasksConfigured) ? (
                             <>
                                 <TouchableOpacity style={styles.taskRow} onPress={() => router.push('/start-crop')}>
                                     <MaterialCommunityIcons name="sprout" size={16} color="#00C853" />

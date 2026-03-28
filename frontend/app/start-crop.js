@@ -1,21 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, Platform, StatusBar } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Picker } from '@react-native-picker/picker';
 
 const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 
 export default function StartCropScreen() {
     const router = useRouter();
-    const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
-    const [masterCrops, setMasterCrops] = useState([]);
+    
+    // Auto-suggest fields
+    const [searchQuery, setSearchQuery] = useState('');
+    const [suggestions, setSuggestions] = useState([]);
+    const [searching, setSearching] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
     
     // Form fields
-    const [selectedCrop, setSelectedCrop] = useState('');
-    const [customName, setCustomName] = useState('');
+    const [selectedCropId, setSelectedCropId] = useState(''); // If they picked from list
+    const [customName, setCustomName] = useState(''); // If they want a custom alias
     const [totalArea, setTotalArea] = useState('');
     const [areaUnit, setAreaUnit] = useState('acres');
     const [farmingMethod, setFarmingMethod] = useState('conventional');
@@ -59,8 +62,8 @@ export default function StartCropScreen() {
     }, []);
 
     const handleStartCrop = async () => {
-        if (!selectedCrop) {
-            Alert.alert('Error', 'Please select a crop to start.');
+        if (!searchQuery.trim()) {
+            Alert.alert('Error', 'Please enter a crop name.');
             return;
         }
 
@@ -68,15 +71,22 @@ export default function StartCropScreen() {
         try {
             const deviceId = await AsyncStorage.getItem('deviceId') || 'default-device-id';
             
+            // If they didn't select from the list, we send `customName` and omit `masterCropId`
             const payload = {
                 deviceId,
-                masterCropId: selectedCrop,
-                customName: customName.trim() || undefined,
                 totalArea: totalArea ? parseFloat(totalArea) : undefined,
                 areaUnit,
                 farmingMethod,
                 soilType
             };
+
+            if (selectedCropId) {
+                payload.masterCropId = selectedCropId;
+                if (customName.trim()) payload.customName = customName.trim();
+            } else {
+                // Completely new crop the user just typed out
+                payload.customName = searchQuery.trim();
+            }
 
             const response = await fetch(`${API_BASE_URL}/crops/start`, {
                 method: 'POST',
@@ -102,16 +112,6 @@ export default function StartCropScreen() {
         }
     };
 
-    if (loading) {
-        return (
-            <SafeAreaView style={styles.safeArea}>
-                <View style={styles.center}>
-                    <ActivityIndicator size="large" color="#00C853" />
-                </View>
-            </SafeAreaView>
-        );
-    }
-
     return (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.header}>
@@ -122,22 +122,52 @@ export default function StartCropScreen() {
                 <View style={{ width: 40 }} />
             </View>
             
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                 <View style={styles.formCard}>
-                    <Text style={styles.label}>Select Crop *</Text>
-                    <View style={styles.pickerContainer}>
-                        <Picker
-                            selectedValue={selectedCrop}
-                            onValueChange={(itemValue) => setSelectedCrop(itemValue)}
-                            style={styles.picker}
-                        >
-                            {masterCrops.map(crop => (
-                                <Picker.Item key={crop._id} label={crop.name} value={crop._id} />
-                            ))}
-                        </Picker>
+                    <Text style={styles.label}>Crop Name *</Text>
+                    <View style={styles.searchContainer}>
+                        <MaterialCommunityIcons name="magnify" size={20} color="#888" style={styles.searchIcon} />
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Type to search e.g. Tomato"
+                            value={searchQuery}
+                            onChangeText={handleSearchChange}
+                            onFocus={() => { if(searchQuery) setShowSuggestions(true); }}
+                        />
+                        {searching && <ActivityIndicator size="small" color="#00C853" style={styles.searchActionIcon} />}
+                        {searchQuery.length > 0 && !searching && (
+                            <TouchableOpacity onPress={() => { setSearchQuery(''); setSelectedCropId(''); }} style={styles.searchActionIcon}>
+                                <MaterialCommunityIcons name="close-circle" size={18} color="#ccc" />
+                            </TouchableOpacity>
+                        )}
                     </View>
 
-                    <Text style={styles.label}>Custom Name (Optional)</Text>
+                    {/* Auto-suggest dropdown menu */}
+                    {showSuggestions && (searchQuery.length > 0) && (
+                        <View style={styles.suggestionsCard}>
+                            {suggestions.length > 0 ? (
+                                suggestions.map(crop => (
+                                    <TouchableOpacity 
+                                        key={crop._id} 
+                                        style={styles.suggestionItem} 
+                                        onPress={() => handleSelectSuggestion(crop)}
+                                    >
+                                        <MaterialCommunityIcons name="leaf" size={16} color="#00C853" style={{ marginRight: 8 }} />
+                                        <Text style={styles.suggestionText}>{crop.name}</Text>
+                                    </TouchableOpacity>
+                                ))
+                            ) : !searching ? (
+                                <View style={styles.suggestionItem}>
+                                    <View>
+                                        <Text style={styles.suggestionText}>"{searchQuery}" not found.</Text>
+                                        <Text style={{ fontSize: 12, color: '#888', marginTop: 2 }}>Tap Start below to add this as a new crop!</Text>
+                                    </View>
+                                </View>
+                            ) : null}
+                        </View>
+                    )}
+
+                    <Text style={styles.label}>Custom Alias (Optional)</Text>
                     <TextInput 
                         style={styles.input} 
                         placeholder="e.g. Backyard Tomatoes"
@@ -154,47 +184,50 @@ export default function StartCropScreen() {
                             value={totalArea}
                             onChangeText={setTotalArea}
                         />
-                        <View style={[styles.pickerContainer, { flex: 1 }]}>
-                            <Picker
-                                selectedValue={areaUnit}
-                                onValueChange={(itemValue) => setAreaUnit(itemValue)}
-                                style={styles.picker}
-                            >
-                                <Picker.Item label="Acres" value="acres" />
-                                <Picker.Item label="Hectares" value="hectares" />
-                                <Picker.Item label="Sq Meters" value="sq_meters" />
-                            </Picker>
-                        </View>
                     </View>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.chipRow, { marginTop: 12 }]}>
+                        {['acres', 'hectares', 'sq_meters'].map(unit => (
+                            <TouchableOpacity 
+                                key={unit} 
+                                style={[styles.chip, areaUnit === unit && styles.chipActive]}
+                                onPress={() => setAreaUnit(unit)}
+                            >
+                                <Text style={[styles.chipText, areaUnit === unit && styles.chipTextActive]}>
+                                    {unit.replace('_', ' ').toUpperCase()}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
 
                     <Text style={styles.label}>Farming Method</Text>
-                    <View style={styles.pickerContainer}>
-                        <Picker
-                            selectedValue={farmingMethod}
-                            onValueChange={(itemValue) => setFarmingMethod(itemValue)}
-                            style={styles.picker}
-                        >
-                            <Picker.Item label="Conventional" value="conventional" />
-                            <Picker.Item label="Organic" value="organic" />
-                            <Picker.Item label="Hydroponic" value="hydroponic" />
-                            <Picker.Item label="Other" value="other" />
-                        </Picker>
-                    </View>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+                        {['conventional', 'organic', 'hydroponic', 'other'].map(method => (
+                            <TouchableOpacity 
+                                key={method} 
+                                style={[styles.chip, farmingMethod === method && styles.chipActive]}
+                                onPress={() => setFarmingMethod(method)}
+                            >
+                                <Text style={[styles.chipText, farmingMethod === method && styles.chipTextActive]}>
+                                    {method.charAt(0).toUpperCase() + method.slice(1)}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
 
                     <Text style={styles.label}>Soil Type</Text>
-                    <View style={styles.pickerContainer}>
-                        <Picker
-                            selectedValue={soilType}
-                            onValueChange={(itemValue) => setSoilType(itemValue)}
-                            style={styles.picker}
-                        >
-                            <Picker.Item label="Loamy" value="loamy" />
-                            <Picker.Item label="Clay" value="clay" />
-                            <Picker.Item label="Sandy" value="sandy" />
-                            <Picker.Item label="Silty" value="silty" />
-                            <Picker.Item label="Peaty" value="peaty" />
-                        </Picker>
-                    </View>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+                        {['loamy', 'clay', 'sandy', 'silty', 'peaty'].map(soil => (
+                            <TouchableOpacity 
+                                key={soil} 
+                                style={[styles.chip, soilType === soil && styles.chipActive]}
+                                onPress={() => setSoilType(soil)}
+                            >
+                                <Text style={[styles.chipText, soilType === soil && styles.chipTextActive]}>
+                                    {soil.charAt(0).toUpperCase() + soil.slice(1)}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
                 </View>
 
                 <TouchableOpacity 
@@ -264,6 +297,53 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         marginTop: 16,
     },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 12,
+        backgroundColor: '#fafafa',
+        paddingHorizontal: 12,
+    },
+    searchIcon: {
+        marginRight: 8,
+    },
+    searchActionIcon: {
+        padding: 4,
+    },
+    searchInput: {
+        flex: 1,
+        paddingVertical: 12,
+        fontSize: 16,
+        color: '#333',
+    },
+    suggestionsCard: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#eee',
+        borderBottomLeftRadius: 12,
+        borderBottomRightRadius: 12,
+        borderTopWidth: 0,
+        marginTop: -4, // overlap the input slightly
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        zIndex: 10,
+    },
+    suggestionItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f5f5f5',
+    },
+    suggestionText: {
+        fontSize: 15,
+        color: '#333',
+    },
     input: {
         borderWidth: 1,
         borderColor: '#ddd',
@@ -288,6 +368,32 @@ const styles = StyleSheet.create({
     row: {
         flexDirection: 'row',
         alignItems: 'center',
+    },
+    chipRow: {
+        flexDirection: 'row',
+        paddingVertical: 4,
+    },
+    chip: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+        backgroundColor: '#f0f0f0',
+        marginRight: 10,
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    chipActive: {
+        backgroundColor: '#e8f5e9',
+        borderColor: '#00C853',
+    },
+    chipText: {
+        color: '#666',
+        fontWeight: '500',
+        fontSize: 14,
+    },
+    chipTextActive: {
+        color: '#00C853',
+        fontWeight: 'bold',
     },
     submitButton: {
         backgroundColor: '#00C853',

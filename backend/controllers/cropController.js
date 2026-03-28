@@ -2,6 +2,27 @@ const MasterCrop = require('../models/MasterCrop');
 const ActiveCrop = require('../models/ActiveCrop');
 const { v4: uuidv4 } = require('uuid'); // To generate unique task IDs
 
+// GET /api/crops/search?q=query
+// Purpose: Auto-suggest master crops by name
+exports.searchMasterCrops = async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q) {
+      return res.status(200).json({ success: true, data: [] });
+    }
+
+    // Case-insensitive regex search
+    const matchingCrops = await MasterCrop.find({ 
+      name: { $regex: q, $options: 'i' } 
+    }).limit(10).select('_id name imageUrl');
+
+    res.status(200).json({ success: true, data: matchingCrops });
+  } catch (error) {
+    console.error('Error searching master crops:', error);
+    res.status(500).json({ success: false, error: 'Server error searching crops' });
+  }
+};
+
 // POST /api/crops/start
 // Purpose: Starts a crop for a user and generates their personalized timeline
 exports.startCrop = async (req, res) => {
@@ -12,16 +33,35 @@ exports.startCrop = async (req, res) => {
        return res.status(400).json({ success: false, error: 'deviceId and masterCropId are required' });
     }
 
-    // 1. Fetch the master template
-    const masterCrop = await MasterCrop.findById(masterCropId);
-    if (!masterCrop) {
-      return res.status(404).json({ success: false, error: 'Master crop template not found' });
+    let masterCrop;
+    let finalCropName = customName;
+
+    if (masterCropId) {
+        masterCrop = await MasterCrop.findById(masterCropId);
+        if (!masterCrop) {
+            return res.status(404).json({ success: false, error: 'Master crop template not found' });
+        }
+        if (!finalCropName) finalCropName = masterCrop.name;
+    } else if (customName) {
+        // Find existing or create a barebones master crop if user typed a completely new name without selecting from list
+        masterCrop = await MasterCrop.findOne({ name: { $regex: new RegExp(`^${customName}$`, 'i') }});
+        if (!masterCrop) {
+            masterCrop = new MasterCrop({
+                name: customName,
+                description: 'User-submitted crop awaiting timeline details.',
+                timelineTemplate: [] // Empty for now, admin to fill later
+            });
+            await masterCrop.save();
+        }
+    } else {
+        return res.status(400).json({ success: false, error: 'Either masterCropId or a crop name must be provided' });
     }
 
     // 2. Generate the personalized timeline based on today's start date
     const startDate = new Date();
     
-    const dailyTasks = masterCrop.timelineTemplate.map((templateTask) => {
+    // Only generate tasks if the template exists
+    const dailyTasks = (masterCrop.timelineTemplate || []).map((templateTask) => {
       // Calculate due date (startDate + targetDay in milliseconds)
       const dueDate = new Date(startDate.getTime());
       dueDate.setDate(dueDate.getDate() + templateTask.day);
@@ -42,7 +82,7 @@ exports.startCrop = async (req, res) => {
     const activeCrop = new ActiveCrop({
       deviceId,
       cropId: masterCrop._id,
-      cropName: customName || masterCrop.name,
+      cropName: finalCropName,
       startDate: startDate,
       totalArea,
       areaUnit,
@@ -84,6 +124,7 @@ exports.getActiveCrops = async (req, res) => {
         _id: crop._id,
         cropName: crop.cropName,
         startDate: crop.startDate,
+        totalTasksCount: crop.dailyTasks ? crop.dailyTasks.length : 0,
         pendingTasksCount: pendingTasks.length,
         dueTasks: pendingTasks // Tasks the UI needs to show right now
       };
