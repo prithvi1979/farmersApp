@@ -63,8 +63,9 @@ exports.startCrop = async (req, res) => {
     // Only generate tasks if the template exists
     const dailyTasks = (masterCrop.timelineTemplate || []).map((templateTask) => {
       // Calculate due date (startDate + targetDay in milliseconds)
+      // templateTask.day is 1-indexed (Day 1 = Today), so subtract 1.
       const dueDate = new Date(startDate.getTime());
-      dueDate.setDate(dueDate.getDate() + templateTask.day);
+      dueDate.setDate(dueDate.getDate() + (templateTask.day - 1));
 
       return {
         taskId: uuidv4(), // Give this specific task instance a unique ID

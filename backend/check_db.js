@@ -1,23 +1,23 @@
-require('dotenv').config();
 const mongoose = require('mongoose');
+require('dotenv').config();
 
-const checkDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    const collections = await mongoose.connection.db.listCollections().toArray();
-    console.log('Collections in database:');
-    collections.forEach(c => console.log(`- ${c.name}`));
-    
-    // Check if we have documents in them
-    for (const c of collections) {
-      const count = await mongoose.connection.db.collection(c.name).countDocuments();
-      console.log(`${c.name} has ${count} documents`);
-    }
-    process.exit(0);
-  } catch (err) {
-    console.error(err);
-    process.exit(1);
+const uri = process.env.MONGODB_URI;
+
+async function check() {
+  await mongoose.connect(uri);
+  const db = mongoose.connection;
+  const ActiveCrop = db.collection('activecrops');
+  
+  const crops = await ActiveCrop.find({}).toArray();
+  for (const c of crops) {
+      console.log(`\nCrop: ${c.cropName}`);
+      console.log(`StartDate: ${c.startDate}`);
+      console.log(`Total Tasks: ${c.dailyTasks?.length || 0}`);
+      if (c.dailyTasks && c.dailyTasks.length > 0) {
+          const firstTask = c.dailyTasks[0];
+          console.log(`First Task: ${firstTask.title}, targetDay: ${firstTask.targetDay}, dueDate: ${firstTask.dueDate}`);
+      }
   }
-};
-
-checkDB();
+  process.exit(0);
+}
+check();

@@ -24,42 +24,44 @@ export default function StartCropScreen() {
     const [farmingMethod, setFarmingMethod] = useState('conventional');
     const [soilType, setSoilType] = useState('loamy');
 
-    useEffect(() => {
-        // Fetch Master Crops from DB (simulated fetch if no endpoint exists, but we should try fetch if available)
-        // Since there is no specific master crops endpoint mentioned, we'll dummy it or assume one exists. 
-        // Wait, startCrop uses masterCropId. I should check if there's a master crop route or just fetch crops.
-        // For now, let's just make a generic route or mock the data since usually admins set them up.
-        // Actually I should look if there is GET /api/crops/master? or similar. If not I will hardcode a few for now.
-        // I will use a placeholder fetch, if fails, fallback to hardcoded master crops.
-        const fetchMasterCrops = async () => {
-             try {
-                 // Trying a generic fetch
-                 const res = await fetch(`${API_BASE_URL}/crops/master`);
-                 if(res.ok) {
-                    const json = await res.json();
-                    if(json.success && json.data.length > 0) {
-                        setMasterCrops(json.data);
-                        setSelectedCrop(json.data[0]._id);
-                        setLoading(false);
-                        return;
-                    }
-                 }
-             } catch(err) {
-                 console.log("No master crops endpoint, using fallbacks.");
-             }
-             
-             // Fallbacks if endpoint doesn't exist or is empty
-             setMasterCrops([
-                 { _id: '65f1a2b3c4d5e6f7a8b9c0d1', name: 'Tomato' },
-                 { _id: '65f1a2b3c4d5e6f7a8b9c0d2', name: 'Carrot' },
-                 { _id: '65f1a2b3c4d5e6f7a8b9c0d3', name: 'Cabbage' },
-             ]);
-             setSelectedCrop('65f1a2b3c4d5e6f7a8b9c0d1');
-             setLoading(false);
-        };
+    // Debounce search
+    const debounceTimeout = useRef(null);
 
-        fetchMasterCrops();
-    }, []);
+    const handleSearchChange = (text) => {
+        setSearchQuery(text);
+        setSelectedCropId(''); // Reset selected ID because they are typing something new
+        setShowSuggestions(true);
+
+        if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+
+        if (text.trim().length === 0) {
+            setSuggestions([]);
+            return;
+        }
+
+        debounceTimeout.current = setTimeout(async () => {
+            setSearching(true);
+            try {
+                const res = await fetch(`${API_BASE_URL}/crops/search?q=${encodeURIComponent(text)}`);
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json.success) {
+                        setSuggestions(json.data);
+                    }
+                }
+            } catch (err) {
+                console.log("Search error:", err);
+            } finally {
+                setSearching(false);
+            }
+        }, 400); // 400ms debounce
+    };
+
+    const handleSelectSuggestion = (crop) => {
+        setSearchQuery(crop.name);
+        setSelectedCropId(crop._id);
+        setShowSuggestions(false);
+    };
 
     const handleStartCrop = async () => {
         if (!searchQuery.trim()) {
