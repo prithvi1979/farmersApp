@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, TouchableOpacity, Platform, StatusBar, ActivityIndicator, Modal } from 'react-native';
 import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import Constants from 'expo-constants';
 import HeaderDropdown from '../../components/HeaderDropdown';
 import * as ImagePicker from 'expo-image-picker';
@@ -19,6 +20,10 @@ export default function HomeScreen() {
     const [diagnosing, setDiagnosing] = useState(false);
     const [diagnosisResult, setDiagnosisResult] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
+
+    const [activeCrops, setActiveCrops] = useState([]);
+    const [dueTasks, setDueTasks] = useState([]);
+    const [loadingTasks, setLoadingTasks] = useState(true);
 
     useEffect(() => {
         const fetchWeather = async () => {
@@ -43,6 +48,66 @@ export default function HomeScreen() {
         fetchWeather();
 
     }, []);
+
+    const fetchCropsData = async () => {
+        try {
+            setLoadingTasks(true);
+            const deviceId = await AsyncStorage.getItem('deviceId') || 'default-device-id';
+            const res = await fetch(`${API_BASE_URL}/crops/active/${deviceId}`);
+            const json = await res.json();
+            
+            if (json.success) {
+                setActiveCrops(json.data);
+                
+                // Extract all due tasks from all crops
+                let allDueTasks = [];
+                json.data.forEach(crop => {
+                    if (crop.dueTasks) {
+                        const cropTasks = crop.dueTasks.map(t => ({
+                            ...t, 
+                            cropName: crop.cropName, 
+                            activeCropId: crop._id 
+                        }));
+                        allDueTasks = [...allDueTasks, ...cropTasks];
+                    }
+                });
+                
+                setDueTasks(allDueTasks);
+            }
+        } catch (error) {
+            console.error('Error fetching crops for home:', error);
+        } finally {
+            setLoadingTasks(false);
+        }
+    };
+
+    useFocusEffect(
+        React.useCallback(() => {
+            fetchCropsData();
+        }, [])
+    );
+
+    const handleCompleteTask = async (activeCropId, taskId) => {
+        try {
+            // Optimistically update UI
+            setDueTasks(prev => prev.filter(t => t.taskId !== taskId));
+
+            const response = await fetch(`${API_BASE_URL}/crops/task/complete`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ activeCropId, taskId })
+            });
+            const json = await response.json();
+            
+            if (!json.success) {
+                // Revert on failure
+                fetchCropsData();
+            }
+        } catch (error) {
+            console.error("Error completing task:", error);
+            fetchCropsData();
+        }
+    };
 
     const handleScanNow = async () => {
         try {
@@ -178,20 +243,47 @@ export default function HomeScreen() {
                     <View style={styles.widgetCard}>
                         <View style={styles.widgetHeaderRow}>
                             <Text style={styles.widgetTitle}>Today's Work</Text>
-                            <View style={styles.notificationDot} />
+                            {dueTasks.length > 0 && <View style={styles.notificationDot} />}
                         </View>
-                        <View style={styles.taskRow}>
-                            <MaterialCommunityIcons name="check-circle" size={16} color="#00C853" />
-                            <Text style={styles.taskTextDone}>Water Zone A</Text>
-                        </View>
-                        <View style={styles.taskRow}>
-                            <MaterialCommunityIcons name="circle-outline" size={16} color="#ccc" />
-                            <Text style={styles.taskText}>Soil Check</Text>
-                        </View>
-                        <View style={styles.taskRow}>
-                            <MaterialCommunityIcons name="circle-outline" size={16} color="#ccc" />
-                            <Text style={styles.taskText}>Fertilize Peppers</Text>
-                        </View>
+                        
+                        {loadingTasks ? (
+                            <ActivityIndicator size="small" color="#00C853" style={{ marginVertical: 10 }} />
+                        ) : activeCrops.length === 0 ? (
+                            <>
+                                <TouchableOpacity style={styles.taskRow} onPress={() => router.push('/start-crop')}>
+                                    <MaterialCommunityIcons name="sprout" size={16} color="#00C853" />
+                                    <Text style={styles.taskText}>Start a crop</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.taskRow} onPress={() => router.push('/fert-calc')}>
+                                    <MaterialCommunityIcons name="calculator" size={16} color="#0288D1" />
+                                    <Text style={styles.taskText}>Check Agri calc</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.taskRow} onPress={() => router.push('/(tabs)/community')}>
+                                    <MaterialCommunityIcons name="account-group" size={16} color="#f57c00" />
+                                    <Text style={styles.taskText}>Start a discussion</Text>
+                                </TouchableOpacity>
+                            </>
+                        ) : dueTasks.length === 0 ? (
+                            <View style={{ alignItems: 'center', paddingVertical: 10 }}>
+                                <MaterialCommunityIcons name="check-circle-outline" size={24} color="#ccc" />
+                                <Text style={{ fontSize: 12, color: '#888', marginTop: 4 }}>All done for today!</Text>
+                            </View>
+                        ) : (
+                            dueTasks.slice(0, 3).map(task => (
+                                <View key={task.taskId} style={styles.taskRow}>
+                                    <TouchableOpacity onPress={() => handleCompleteTask(task.activeCropId, task.taskId)}>
+                                        <MaterialCommunityIcons name="circle-outline" size={18} color="#ccc" />
+                                    </TouchableOpacity>
+                                    <Text style={styles.taskText} numberOfLines={1}>{task.title}</Text>
+                                </View>
+                            ))
+                        )}
+                        
+                        {!loadingTasks && activeCrops.length > 0 && dueTasks.length > 3 && (
+                            <TouchableOpacity onPress={() => router.push('/(tabs)/crops')}>
+                                <Text style={{ fontSize: 11, color: '#00C853', textAlign: 'center', marginTop: 4 }}>+{dueTasks.length - 3} more</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
 
                 </View>
@@ -216,7 +308,7 @@ export default function HomeScreen() {
                 </View>
 
                 {/* Start a Crop */}
-                <TouchableOpacity style={styles.startCropCard}>
+                <TouchableOpacity style={styles.startCropCard} onPress={() => router.push('/start-crop')}>
                     <View style={styles.startCropIconBg}>
                         <MaterialCommunityIcons name="seed-outline" size={28} color="#00C853" />
                     </View>

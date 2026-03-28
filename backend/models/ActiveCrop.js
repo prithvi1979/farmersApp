@@ -18,6 +18,20 @@ const activeCropSchema = new mongoose.Schema({
     type: Date, 
     default: Date.now 
   }, 
+  totalArea: {
+    type: Number
+  },
+  areaUnit: {
+    type: String,
+    enum: ['acres', 'hectares', 'sq_meters']
+  },
+  farmingMethod: {
+    type: String,
+    enum: ['organic', 'conventional', 'hydroponic', 'other']
+  },
+  soilType: {
+    type: String
+  },
   status: { 
     type: String, 
     enum: ['active', 'harvested', 'cancelled'], 

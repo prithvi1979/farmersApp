@@ -53,6 +53,15 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
+                name="crops"
+                options={{
+                    title: 'Your Crops',
+                    tabBarIcon: ({ color }) => (
+                        <MaterialCommunityIcons name="sprout" size={26} color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen
                 name="profile"
                 options={{
                     title: 'Profile',

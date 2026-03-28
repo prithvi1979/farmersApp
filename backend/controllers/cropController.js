@@ -6,7 +6,7 @@ const { v4: uuidv4 } = require('uuid'); // To generate unique task IDs
 // Purpose: Starts a crop for a user and generates their personalized timeline
 exports.startCrop = async (req, res) => {
   try {
-    const { deviceId, masterCropId, customName } = req.body;
+    const { deviceId, masterCropId, customName, totalArea, areaUnit, farmingMethod, soilType } = req.body;
 
     if (!deviceId || !masterCropId) {
        return res.status(400).json({ success: false, error: 'deviceId and masterCropId are required' });
@@ -44,6 +44,10 @@ exports.startCrop = async (req, res) => {
       cropId: masterCrop._id,
       cropName: customName || masterCrop.name,
       startDate: startDate,
+      totalArea,
+      areaUnit,
+      farmingMethod,
+      soilType,
       status: 'active',
       dailyTasks: dailyTasks
     });
