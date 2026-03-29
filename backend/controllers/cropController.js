@@ -37,8 +37,11 @@ exports.startCrop = async (req, res) => {
   try {
     const { deviceId, masterCropId, customName, totalArea, areaUnit, farmingMethod, soilType } = req.body;
 
-    if (!deviceId || !masterCropId) {
-       return res.status(400).json({ success: false, error: 'deviceId and masterCropId are required' });
+    if (!deviceId) {
+       return res.status(400).json({ success: false, error: 'deviceId is required' });
+    }
+    if (!masterCropId && !customName) {
+       return res.status(400).json({ success: false, error: 'Either masterCropId or a crop name must be provided' });
     }
 
     let masterCrop;
