@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator, Platform, StatusBar, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator, Platform, StatusBar, Alert, useWindowDimensions } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import axios from 'axios';
+import RenderHtml from 'react-native-render-html';
 
 const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 
 export default function CropInstructionsScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
+    const { width } = useWindowDimensions();
     const [crop, setCrop] = useState(null);
     const [loading, setLoading] = useState(true);
     const [togglingTaskId, setTogglingTaskId] = useState(null);
@@ -21,9 +22,10 @@ export default function CropInstructionsScreen() {
 
     const fetchCropDetails = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/crops/active-crop/${id}`);
-            if (response.data.success) {
-                setCrop(response.data.data);
+            const response = await fetch(`${API_BASE_URL}/crops/active-crop/${id}`);
+            const data = await response.json();
+            if (data.success) {
+                setCrop(data.data);
             }
         } catch (error) {
             console.error('Error fetching crop details:', error);
@@ -37,12 +39,19 @@ export default function CropInstructionsScreen() {
         if (currentStatus) return; // Prevent un-completing if not supported
         setTogglingTaskId(taskId);
         try {
-            const response = await axios.patch(`${API_BASE_URL}/crops/task/complete`, {
-                activeCropId: id,
-                taskId: taskId
+            const response = await fetch(`${API_BASE_URL}/crops/task/complete`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    activeCropId: id,
+                    taskId: taskId
+                })
             });
+            const data = await response.json();
 
-            if (response.data.success) {
+            if (data.success) {
                 setCrop(prev => {
                     const newCrop = { ...prev };
                     const taskIndex = newCrop.dailyTasks.findIndex(t => t.taskId === taskId);
@@ -97,16 +106,33 @@ export default function CropInstructionsScreen() {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={styles.summaryCard}>
                     <Text style={styles.summaryTitle}>Cultivation Timeline</Text>
-                    <Text style={styles.summaryDesc}>Follow these steps to ensure a healthy harvest. Mark each task as completed to track your progress.</Text>
+                    <Text style={styles.summaryDesc}>Follow these steps to ensure a healthy harvest. Future phases will unlock as you progress to keep things simple.</Text>
                 </View>
 
-                {crop.dailyTasks && crop.dailyTasks.map((task, index) => {
-                    const dueDate = new Date(task.dueDate);
-                    const isOverdue = dueDate < today && !task.isCompleted;
+                {(() => {
+                    if (!crop.dailyTasks) return null;
+                    
+                    // 1. Identify all unique phases in chronological order
+                    const uniquePhases = [...new Set(crop.dailyTasks.map(t => t.phase || 'Daily Care'))];
+                    
+                    // 2. Find the current phase (the phase of the first incomplete task)
+                    const firstPendingTask = crop.dailyTasks.find(t => !t.isCompleted);
+                    const currentPhase = firstPendingTask ? (firstPendingTask.phase || 'Daily Care') : uniquePhases[uniquePhases.length - 1];
+                    const currentPhaseIndex = uniquePhases.indexOf(currentPhase);
+                    
+                    // 3. Keep phases up to currentPhase Index + 1 (Current + Next)
+                    const visiblePhases = uniquePhases.slice(0, currentPhaseIndex + 2);
+                    
+                    // 4. Filter tasks to only those in the visible phases
+                    const visibleTasks = crop.dailyTasks.filter(t => visiblePhases.includes(t.phase || 'Daily Care'));
 
-                    return (
-                        <View 
-                            key={task.taskId || index} 
+                    return visibleTasks.map((task, index) => {
+                        const dueDate = new Date(task.dueDate);
+                        const isOverdue = dueDate < today && !task.isCompleted;
+
+                        return (
+                            <View 
+                                key={task.taskId || index} 
                             style={[
                                 styles.taskCard, 
                                 task.isCompleted && styles.taskCardCompleted,
@@ -125,7 +151,22 @@ export default function CropInstructionsScreen() {
                             </Text>
 
                             {task.instructions ? (
-                                <Text style={styles.taskDesc}>{task.instructions}</Text>
+                                <View style={styles.htmlContainer}>
+                                    <RenderHtml
+                                        contentWidth={width - 64}
+                                        source={{ html: task.instructions }}
+                                        baseStyle={{
+                                            ...styles.taskDescHtml,
+                                            textDecorationLine: task.isCompleted ? 'line-through' : 'none',
+                                            color: task.isCompleted ? '#888' : '#555'
+                                        }}
+                                        tagsStyles={{
+                                            p: { marginVertical: 4 },
+                                            ul: { marginVertical: 4, paddingLeft: 20 },
+                                            li: { marginBottom: 4 }
+                                        }}
+                                    />
+                                </View>
                             ) : null}
 
                             {isOverdue && (
@@ -163,8 +204,9 @@ export default function CropInstructionsScreen() {
                                 )}
                             </TouchableOpacity>
                         </View>
-                    );
-                })}
+                        );
+                    });
+                })()}
             </ScrollView>
         </SafeAreaView>
     );
@@ -274,6 +316,13 @@ const styles = StyleSheet.create({
         color: '#555',
         lineHeight: 20,
         marginBottom: 16,
+    },
+    htmlContainer: {
+        marginBottom: 16,
+    },
+    taskDescHtml: {
+        fontSize: 14,
+        lineHeight: 22,
     },
     overdueWarningContainer: {
         flexDirection: 'row',
