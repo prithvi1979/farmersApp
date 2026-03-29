@@ -6,6 +6,7 @@ const cropController = require('../controllers/cropController');
 router.get('/search', cropController.searchMasterCrops);
 router.post('/start', cropController.startCrop);
 router.get('/active/:deviceId', cropController.getActiveCrops);
+router.get('/active-crop/:id', cropController.getActiveCropById);
 router.patch('/task/complete', cropController.completeTask);
 
 module.exports = router;

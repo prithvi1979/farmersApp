@@ -118,6 +118,16 @@ export default function CropsScreen() {
                                     </View>
                                 </View>
                             ))}
+                            
+                            {crop.status !== 'inactive' && (
+                                <TouchableOpacity 
+                                    style={styles.seeInstructionsBtn}
+                                    onPress={() => router.push(`/crop-instructions/${crop._id}`)}
+                                >
+                                    <Text style={styles.seeInstructionsBtnText}>See Instructions</Text>
+                                    <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />
+                                </TouchableOpacity>
+                            )}
                         </View>
                     ))
                 )}
@@ -276,5 +286,20 @@ const styles = StyleSheet.create({
     taskPhase: {
         fontSize: 12,
         color: '#888',
+    },
+    seeInstructionsBtn: {
+        flexDirection: 'row',
+        backgroundColor: '#00C853',
+        paddingVertical: 12,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 12,
+    },
+    seeInstructionsBtnText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 14,
+        marginRight: 8,
     }
 });

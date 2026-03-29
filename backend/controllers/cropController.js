@@ -190,3 +190,19 @@ exports.completeTask = async (req, res) => {
     res.status(500).json({ success: false, error: 'Server error completing task' });
   }
 };
+
+// GET /api/crops/active-crop/:id
+// Purpose: Fetch a specific active crop with its full timeline
+exports.getActiveCropById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const crop = await ActiveCrop.findById(id).populate('cropId');
+    if (!crop) {
+      return res.status(404).json({ success: false, error: 'Crop not found' });
+    }
+    res.status(200).json({ success: true, data: crop });
+  } catch (error) {
+    console.error('Error fetching active crop by id:', error);
+    res.status(500).json({ success: false, error: 'Server error fetching crop details' });
+  }
+};

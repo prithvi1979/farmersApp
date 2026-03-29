@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, TouchableOpacity, Platform, StatusBar, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, ImageBackground, TouchableOpacity, Platform, StatusBar, ActivityIndicator, Modal } from 'react-native';
 import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -43,6 +43,17 @@ export default function HomeScreen() {
     useEffect(() => {
         const fetchWeather = async () => {
             try {
+                // Try loading from local cache first for instant hydration
+                const cachedWeather = await AsyncStorage.getItem('@cached_weather');
+                if (cachedWeather) {
+                    try {
+                        setWeather(JSON.parse(cachedWeather));
+                        setWeatherLoading(false);
+                    } catch (e) {
+                         console.error('Error parsing cached weather', e);
+                    }
+                }
+
                 // Try fetching weather by saved device profile first, fallback to IP
                 const deviceId = await AsyncStorage.getItem('deviceId');
                 const endpoint = deviceId 
@@ -53,6 +64,7 @@ export default function HomeScreen() {
                 const json = await res.json();
                 if (json.success) {
                     setWeather(json.data);
+                    await AsyncStorage.setItem('@cached_weather', JSON.stringify(json.data));
                 }
             } catch (err) {
                 console.log('Weather fetch error:', err.message);
@@ -66,7 +78,24 @@ export default function HomeScreen() {
 
     const fetchCropsData = async () => {
         try {
-            setLoadingTasks(true);
+            // Try loading from local cache for instant hydration
+            const cachedCrops = await AsyncStorage.getItem('@cached_crops_data');
+            if (cachedCrops) {
+                try {
+                    const parsedData = JSON.parse(cachedCrops);
+                    setActiveCrops(parsedData.activeCrops);
+                    setDueTasks(parsedData.allDueTasks);
+                    setHasAnyTasksConfigured(parsedData.anyTasks);
+                    setRandomTask(getRandomTask(parsedData.allDueTasks));
+                    setLoadingTasks(false);
+                } catch (e) {
+                    console.error('Error parsing cached crops', e);
+                    setLoadingTasks(true);
+                }
+            } else {
+                setLoadingTasks(true);
+            }
+
             const deviceId = await AsyncStorage.getItem('deviceId') || 'default-device-id';
             const res = await fetch(`${API_BASE_URL}/crops/active/${deviceId}`);
             const json = await res.json();
@@ -94,6 +123,13 @@ export default function HomeScreen() {
                 setDueTasks(allDueTasks);
                 setHasAnyTasksConfigured(anyTasks);
                 setRandomTask(getRandomTask(allDueTasks));
+
+                // Save fresh data to local cache
+                await AsyncStorage.setItem('@cached_crops_data', JSON.stringify({
+                    activeCrops: json.data,
+                    allDueTasks,
+                    anyTasks
+                }));
             }
         } catch (error) {
             console.error('Error fetching crops for home:', error);
@@ -201,23 +237,49 @@ export default function HomeScreen() {
                     <HeaderDropdown />
                 </View>
 
-                {/* Selected Crops */}
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cropsContainer}>
-                    {[
-                        { name: 'Tomato', color: '#ffbaba', border: '#00C853', icon: 'fruit-cherries' },
-                        { name: 'Carrot', color: '#ffd6a5', border: 'transparent', icon: 'carrot' },
-                        { name: 'Cabbage', color: '#d4edda', border: 'transparent', icon: 'leaf' },
-                        { name: 'Pepper', color: '#ffeeba', border: 'transparent', icon: 'pepper-hot' },
-                    ].map((crop, index) => (
-                        <View key={index} style={styles.cropItem}>
-                            <View style={[styles.cropImageContainer, { borderColor: crop.border }]}>
-                                {/* Using icon as placeholder for realistic images */}
-                                <MaterialCommunityIcons name={crop.icon} size={40} color="#555" />
-                            </View>
-                            <Text style={[styles.cropText, index === 0 && styles.cropTextActive]}>{crop.name}</Text>
+                {/* Tools */}
+                <View style={styles.toolsRow}>
+                    <TouchableOpacity
+                        style={styles.toolCard}
+                        onPress={() => router.push('/seed-calc')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={styles.toolIconContainer}>
+                            <MaterialCommunityIcons name="seed" size={28} color="#00C853" />
                         </View>
-                    ))}
-                </ScrollView>
+                        <Text style={styles.toolText}>SEED CALC</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.toolCard}
+                        onPress={() => router.push('/fert-calc')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={styles.toolIconContainer}>
+                            <MaterialCommunityIcons name="calculator" size={28} color="#00C853" />
+                        </View>
+                        <Text style={styles.toolText}>FERT CALC</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.toolCard}
+                        onPress={() => router.push('/pest-calc')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={styles.toolIconContainer}>
+                            <MaterialCommunityIcons name="bug" size={28} color="#00C853" />
+                        </View>
+                        <Text style={styles.toolText}>PEST DOSE</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.toolCard}
+                        onPress={() => router.push('/irrigation-calc')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={styles.toolIconContainer}>
+                            <MaterialCommunityIcons name="water" size={28} color="#0288D1" />
+                        </View>
+                        <Text style={styles.toolText}>IRRIGATION</Text>
+                    </TouchableOpacity>
+                </View>
 
                 {/* Daily Widgets — side by side */}
                 <View style={styles.widgetsRow}>
@@ -277,9 +339,9 @@ export default function HomeScreen() {
                         {loadingTasks ? (
                             <ActivityIndicator size="small" color="#00C853" style={{ marginVertical: 10 }} />
                         ) : (activeCrops.length > 0 && activeCrops.every(c => c.status === 'inactive')) ? (
-                            <View style={{ alignItems: 'center', paddingVertical: 16 }}>
-                                <MaterialCommunityIcons name="clipboard-text-clock-outline" size={32} color="#888" />
-                                <Text style={{ fontSize: 14, color: '#555', marginTop: 8, textAlign: 'center' }}>
+                            <View style={{ alignItems: 'center', paddingVertical: 10 }}>
+                                <MaterialCommunityIcons name="clipboard-text-clock-outline" size={28} color="#888" />
+                                <Text style={{ fontSize: 13, color: '#555', marginTop: 4, textAlign: 'center' }}>
                                     your CROP instructions are getting ready
                                 </Text>
                             </View>
@@ -292,10 +354,6 @@ export default function HomeScreen() {
                                 <TouchableOpacity style={styles.taskRow} onPress={() => router.push('/fert-calc')}>
                                     <MaterialCommunityIcons name="calculator" size={16} color="#0288D1" />
                                     <Text style={styles.taskText}>Check Agri calc</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.taskRow} onPress={() => router.push('/(tabs)/community')}>
-                                    <MaterialCommunityIcons name="account-group" size={16} color="#f57c00" />
-                                    <Text style={styles.taskText}>Start a discussion</Text>
                                 </TouchableOpacity>
                             </>
                         ) : !randomTask ? (
@@ -315,7 +373,7 @@ export default function HomeScreen() {
                                         </Text>
                                     </View>
                                 </View>
-                                <View style={[styles.taskRow, { marginTop: 12, marginBottom: 0 }]}>
+                                <View style={[styles.taskRow, { marginTop: 8, marginBottom: 0 }]}>
                                     <MaterialCommunityIcons name="leaf-circle-outline" size={20} color="#00C853" />
                                     <Text style={[styles.taskText, { fontSize: 13, fontWeight: '600' }]} numberOfLines={2}>
                                         {randomTask.title}
@@ -326,43 +384,72 @@ export default function HomeScreen() {
                         
                         {!loadingTasks && activeCrops.length > 0 && dueTasks.length > 1 && (
                             <TouchableOpacity onPress={() => router.push('/(tabs)/crops')}>
-                                <Text style={{ fontSize: 11, color: '#00C853', textAlign: 'center', marginTop: 8 }}>View {dueTasks.length} pending tasks</Text>
+                                <Text style={{ fontSize: 11, color: '#00C853', textAlign: 'center', marginTop: 6 }}>View {dueTasks.length} pending tasks</Text>
                             </TouchableOpacity>
                         )}
                     </View>
 
                 </View>
 
-                {/* Diagnostic Scanner */}
-                <View style={styles.diagnosticCard}>
-                    <View style={styles.diagnosticContent}>
-                        <Text style={styles.diagnosticTitle}>Plant Diagnostic</Text>
-                        <Text style={styles.diagnosticDesc}>Take a photo to identify plant illness instantly</Text>
-                        <TouchableOpacity style={styles.scanButton} onPress={handleScanNow} disabled={diagnosing}>
-                            {diagnosing ? (
-                                <ActivityIndicator size="small" color="#fff" />
-                            ) : (
-                                <>
-                                    <MaterialCommunityIcons name="camera" size={20} color="#fff" style={{ marginRight: 8 }} />
-                                    <Text style={styles.scanButtonText}>Scan Now</Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-                    <MaterialCommunityIcons name="head-question-outline" size={80} color="#a5d6a7" style={styles.diagnosticWatermark} />
-                </View>
+                {/* Tall Action Widgets — side by side */}
+                <View style={styles.widgetsRow}>
+                    {/* Diagnostic Tall Card */}
+                    <TouchableOpacity 
+                        style={styles.tallActionCard} 
+                        onPress={handleScanNow} 
+                        disabled={diagnosing}
+                        activeOpacity={0.9}
+                    >
+                        <ImageBackground 
+                            source={require('../../assets/images/uploaded_diagnostic_leaf.jpg')} 
+                            style={styles.tallActionBgImage}
+                            imageStyle={{ borderRadius: 16, resizeMode: 'cover' }}
+                        >
+                            <View style={[styles.tallActionOverlay, { backgroundColor: 'rgba(0,0,0,0.25)' }]}>
+                                <View style={styles.heroBadge}>
+                                    <Text style={styles.heroBadgeText}>DIAGNOSTIC</Text>
+                                </View>
+                                <Text style={styles.tallActionTitle}>Identify plant illness instantly.</Text>
+                                
+                                <View style={[styles.heroButton, { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16 }]}>
+                                    {diagnosing ? (
+                                        <ActivityIndicator size="small" color="#fff" />
+                                    ) : (
+                                        <>
+                                            <MaterialCommunityIcons name="camera" size={14} color="#fff" style={{ marginRight: 4 }} />
+                                            <Text style={[styles.heroButtonText, { fontSize: 13 }]}>Scan Now</Text>
+                                        </>
+                                    )}
+                                </View>
+                            </View>
+                        </ImageBackground>
+                    </TouchableOpacity>
 
-                {/* Start a Crop */}
-                <TouchableOpacity style={styles.startCropCard} onPress={() => router.push('/start-crop')}>
-                    <View style={styles.startCropIconBg}>
-                        <MaterialCommunityIcons name="seed-outline" size={28} color="#00C853" />
-                    </View>
-                    <View style={styles.startCropContent}>
-                        <Text style={styles.startCropTitle}>Start a Crop</Text>
-                        <Text style={styles.startCropDesc}>Add a new crop to your farm and track its progress.</Text>
-                    </View>
-                    <MaterialCommunityIcons name="chevron-right" size={24} color="#ccc" />
-                </TouchableOpacity>
+                    {/* Start a Crop Tall Card */}
+                    <TouchableOpacity 
+                        style={styles.tallActionCard} 
+                        onPress={() => router.push('/start-crop')}
+                        activeOpacity={0.9}
+                    >
+                        <ImageBackground 
+                            source={require('../../assets/images/cherry_tomatoes_bg.png')} 
+                            style={styles.tallActionBgImage}
+                            imageStyle={{ borderRadius: 16 }}
+                        >
+                            <View style={[styles.tallActionOverlay, { backgroundColor: 'rgba(0,0,0,0.35)' }]}>
+                                <View style={[styles.heroBadge, { backgroundColor: '#E64A19' }]}>
+                                    <Text style={styles.heroBadgeText}>NEW CROP</Text>
+                                </View>
+                                <Text style={styles.tallActionTitle}>Add a new crop to your farm.</Text>
+                                
+                                <View style={[styles.heroButton, { backgroundColor: '#D84315', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16 }]}>
+                                    <MaterialCommunityIcons name="seed-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
+                                    <Text style={[styles.heroButtonText, { fontSize: 13 }]}>Start</Text>
+                                </View>
+                            </View>
+                        </ImageBackground>
+                    </TouchableOpacity>
+                </View>
 
                 {/* Farming News */}
                 <View style={styles.sectionHeaderRow}>
@@ -388,50 +475,8 @@ export default function HomeScreen() {
                     </View>
                 </View>
 
-                {/* Tools */}
-                <Text style={[styles.sectionTitle, { marginTop: 12, marginBottom: 12 }]}>Tools</Text>
-                <View style={styles.toolsRow}>
-                    <TouchableOpacity
-                        style={styles.toolCard}
-                        onPress={() => router.push('/seed-calc')}
-                        activeOpacity={0.7}
-                    >
-                        <View style={styles.toolIconContainer}>
-                            <MaterialCommunityIcons name="seed" size={24} color="#00C853" />
-                        </View>
-                        <Text style={styles.toolText}>SEED CALC</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.toolCard}
-                        onPress={() => router.push('/fert-calc')}
-                        activeOpacity={0.7}
-                    >
-                        <View style={styles.toolIconContainer}>
-                            <MaterialCommunityIcons name="calculator" size={24} color="#00C853" />
-                        </View>
-                        <Text style={styles.toolText}>FERT CALC</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.toolCard}
-                        onPress={() => router.push('/pest-calc')}
-                        activeOpacity={0.7}
-                    >
-                        <View style={styles.toolIconContainer}>
-                            <MaterialCommunityIcons name="bug" size={24} color="#00C853" />
-                        </View>
-                        <Text style={styles.toolText}>PEST DOSE</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.toolCard}
-                        onPress={() => router.push('/irrigation-calc')}
-                        activeOpacity={0.7}
-                    >
-                        <View style={styles.toolIconContainer}>
-                            <MaterialCommunityIcons name="water" size={24} color="#0288D1" />
-                        </View>
-                        <Text style={styles.toolText}>IRRIGATION</Text>
-                    </TouchableOpacity>
-                </View>
+                {/* Spacer where Tools used to be */}
+                <View style={{ height: 16 }} />
 
                 {/* Library */}
                 <View style={[styles.sectionHeaderRow, { marginTop: 16 }]}>
@@ -589,8 +634,8 @@ const styles = StyleSheet.create({
     widgetCard: {
         flex: 1,
         backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 16,
+        borderRadius: 14,
+        padding: 12,
         marginHorizontal: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -602,7 +647,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 8,
     },
     widgetTitle: {
         fontSize: 13,
@@ -629,8 +674,8 @@ const styles = StyleSheet.create({
     weatherWidgetCard: {
         flex: 1,
         backgroundColor: '#e3f2fd',
-        borderRadius: 16,
-        padding: 16,
+        borderRadius: 14,
+        padding: 12,
         marginHorizontal: 4,
         shadowColor: '#0288D1',
         shadowOffset: { width: 0, height: 2 },
@@ -644,11 +689,11 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     weatherWidgetTemp: {
-        fontSize: 28,
+        fontSize: 24,
         fontWeight: 'bold',
         color: '#01579B',
         marginBottom: 2,
-        marginTop: 8,
+        marginTop: 4,
     },
     weatherWidgetDesc: {
         fontSize: 12,
@@ -662,7 +707,7 @@ const styles = StyleSheet.create({
     taskRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 6,
     },
     taskTextDone: {
         fontSize: 12,
@@ -681,92 +726,82 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#f0f0f0',
         borderRadius: 12,
-        padding: 12,
-        marginTop: 4,
+        padding: 8,
+        marginTop: 2,
     },
-    diagnosticCard: {
-        backgroundColor: '#e8f5e9', // Light green background
-        borderRadius: 16,
-        padding: 20,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+    tallActionCard: {
+        width: '48%',
+        height: 240,
         marginBottom: 28,
-        overflow: 'hidden',
-        position: 'relative',
-    },
-    diagnosticContent: {
-        flex: 1,
-        zIndex: 2,
-    },
-    diagnosticTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#111',
-        marginBottom: 6,
-    },
-    diagnosticDesc: {
-        fontSize: 13,
-        color: '#555',
-        marginBottom: 16,
-        lineHeight: 18,
-    },
-    scanButton: {
-        flexDirection: 'row',
-        backgroundColor: '#00C853',
-        paddingVertical: 10,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        alignItems: 'center',
-        alignSelf: 'flex-start',
-    },
-    scanButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 14,
-    },
-    diagnosticWatermark: {
-        position: 'absolute',
-        right: -10,
-        bottom: -10,
-        opacity: 0.5,
-        zIndex: 1,
-        transform: [{ scale: 1.2 }],
-    },
-    startCropCard: {
-        backgroundColor: '#fff',
         borderRadius: 16,
-        padding: 16,
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 28,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
+        shadowOpacity: 0.1,
         shadowRadius: 4,
-        elevation: 2,
+        elevation: 3,
     },
-    startCropIconBg: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: '#e8f5e9',
+    tallActionBgImage: {
+        flex: 1,
+        width: '100%',
+        height: '100%',
+        justifyContent: 'flex-end',
+    },
+    tallActionOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        borderRadius: 16,
+        padding: 12,
+        justifyContent: 'space-between',
+    },
+    heroBadge: {
+        backgroundColor: '#B58E29', // Golden brown
+        alignSelf: 'flex-start',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 10,
+    },
+    heroBadgeText: {
+        color: '#fff',
+        fontSize: 9,
+        fontWeight: 'bold',
+        letterSpacing: 0.5,
+    },
+    tallActionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#fff',
+        lineHeight: 22,
+        flex: 1,
+        marginTop: 12,
+    },
+    heroButton: {
+        flexDirection: 'row',
+        backgroundColor: '#386A32', // Darker forest green
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        marginTop: 'auto',
+    },
+    heroButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+    tallActionIconBg: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 16,
+        marginBottom: 12,
     },
-    startCropContent: {
-        flex: 1,
-    },
-    startCropTitle: {
-        fontSize: 16,
+    tallActionTitleDark: {
+        fontSize: 18,
         fontWeight: 'bold',
         color: '#111',
         marginBottom: 4,
     },
-    startCropDesc: {
+    tallActionDescDark: {
         fontSize: 12,
-        color: '#666',
+        color: '#555',
         lineHeight: 16,
     },
     sectionHeaderRow: {
@@ -829,30 +864,32 @@ const styles = StyleSheet.create({
     toolCard: {
         flex: 1,
         backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
+        borderRadius: 14,
+        paddingVertical: 18,
+        paddingHorizontal: 8,
         marginHorizontal: 4,
         alignItems: 'center',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.03,
-        shadowRadius: 2,
-        elevation: 1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     toolIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 8,
+        width: 48,
+        height: 48,
+        borderRadius: 12,
         backgroundColor: '#e8f5e9',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 10,
     },
     toolText: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: 'bold',
-        color: '#555',
+        color: '#444',
         letterSpacing: 0.5,
+        textAlign: 'center',
     },
     libraryGrid: {
         flexDirection: 'row',
