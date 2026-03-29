@@ -1,5 +1,6 @@
 const MasterCrop = require('../models/MasterCrop');
 const ActiveCrop = require('../models/ActiveCrop');
+const CropDictionary = require('../models/CropDictionary');
 const { v4: uuidv4 } = require('uuid'); // To generate unique task IDs
 
 // GET /api/crops/search?q=query
@@ -12,9 +13,16 @@ exports.searchMasterCrops = async (req, res) => {
     }
 
     // Case-insensitive regex search
-    const matchingCrops = await MasterCrop.find({ 
+    let matchingCrops = await MasterCrop.find({ 
       name: { $regex: q, $options: 'i' } 
     }).limit(10).select('_id name imageUrl');
+
+    if (matchingCrops.length === 0) {
+      const fallbackCrops = await CropDictionary.find({
+        name: { $regex: q, $options: 'i' }
+      }).limit(10).select('name');
+      matchingCrops = fallbackCrops.map(f => ({ name: f.name })); // No _id for fallback
+    }
 
     res.status(200).json({ success: true, data: matchingCrops });
   } catch (error) {
@@ -79,6 +87,9 @@ exports.startCrop = async (req, res) => {
       };
     });
 
+    // Determine status (inactive if there are no tasks set up by admin yet)
+    const status = dailyTasks.length === 0 ? 'inactive' : 'active';
+
     // 3. Create the active crop
     const activeCrop = new ActiveCrop({
       deviceId,
@@ -89,7 +100,7 @@ exports.startCrop = async (req, res) => {
       areaUnit,
       farmingMethod,
       soilType,
-      status: 'active',
+      status: status,
       dailyTasks: dailyTasks
     });
 
@@ -109,8 +120,8 @@ exports.getActiveCrops = async (req, res) => {
   try {
     const { deviceId } = req.params;
 
-    // Find all active crops for this user
-    const activeCrops = await ActiveCrop.find({ deviceId, status: 'active' });
+    // Find all active or inactive crops for this user
+    const activeCrops = await ActiveCrop.find({ deviceId, status: { $in: ['active', 'inactive'] } });
 
     // Formatting for the "Today's Work" widget logic
     const today = new Date();
@@ -124,6 +135,7 @@ exports.getActiveCrops = async (req, res) => {
       return {
         _id: crop._id,
         cropName: crop.cropName,
+        status: crop.status,
         startDate: crop.startDate,
         totalTasksCount: crop.dailyTasks ? crop.dailyTasks.length : 0,
         pendingTasksCount: pendingTasks.length,

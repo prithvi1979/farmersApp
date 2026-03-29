@@ -90,18 +90,26 @@ export default function CropsScreen() {
                                         Started: {new Date(crop.startDate).toLocaleDateString()}
                                     </Text>
                                 </View>
-                                <View style={styles.statusBadge}>
-                                    <Text style={styles.statusText}>Active</Text>
+                                <View style={[styles.statusBadge, crop.status === 'inactive' && { backgroundColor: '#ffebee' }]}>
+                                    <Text style={[styles.statusText, crop.status === 'inactive' && { color: '#d32f2f' }]}>
+                                        {crop.status === 'inactive' ? 'Inactive' : 'Active'}
+                                    </Text>
                                 </View>
                             </View>
                             
                             <View style={styles.divider} />
                             
-                            <Text style={styles.taskHeader}>
-                                {crop.pendingTasksCount > 0 ? `${crop.pendingTasksCount} Tasks Due Today` : 'Looking good! No pending tasks.'}
-                            </Text>
+                            {crop.status === 'inactive' ? (
+                                <Text style={[styles.taskHeader, { color: '#d32f2f', fontSize: 13, lineHeight: 18, fontStyle: 'italic' }]}>
+                                    You can soon start your crop after we create a customised task to do list for you
+                                </Text>
+                            ) : (
+                                <Text style={styles.taskHeader}>
+                                    {crop.pendingTasksCount > 0 ? `${crop.pendingTasksCount} Tasks Due Today` : 'Looking good! No pending tasks.'}
+                                </Text>
+                            )}
 
-                            {crop.dueTasks && crop.dueTasks.map(task => (
+                            {crop.status !== 'inactive' && crop.dueTasks && crop.dueTasks.map(task => (
                                 <View key={task.taskId} style={styles.taskRow}>
                                     <MaterialCommunityIcons name="circle-outline" size={18} color="#f57c00" />
                                     <View style={styles.taskDetails}>

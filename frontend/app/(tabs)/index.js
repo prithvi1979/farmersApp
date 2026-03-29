@@ -23,8 +23,22 @@ export default function HomeScreen() {
 
     const [activeCrops, setActiveCrops] = useState([]);
     const [dueTasks, setDueTasks] = useState([]);
+    const [randomTask, setRandomTask] = useState(null);
     const [hasAnyTasksConfigured, setHasAnyTasksConfigured] = useState(false);
     const [loadingTasks, setLoadingTasks] = useState(true);
+
+    const calculateDays = (startDateString) => {
+        if (!startDateString) return 1;
+        const start = new Date(startDateString);
+        const today = new Date();
+        const diffTime = Math.abs(today - start);
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+    };
+
+    const getRandomTask = (tasksArray) => {
+        if (!tasksArray || tasksArray.length === 0) return null;
+        return tasksArray[Math.floor(Math.random() * tasksArray.length)];
+    };
 
     useEffect(() => {
         const fetchWeather = async () => {
@@ -70,7 +84,8 @@ export default function HomeScreen() {
                         const cropTasks = crop.dueTasks.map(t => ({
                             ...t, 
                             cropName: crop.cropName, 
-                            activeCropId: crop._id 
+                            activeCropId: crop._id,
+                            startDate: crop.startDate
                         }));
                         allDueTasks = [...allDueTasks, ...cropTasks];
                     }
@@ -78,6 +93,7 @@ export default function HomeScreen() {
                 
                 setDueTasks(allDueTasks);
                 setHasAnyTasksConfigured(anyTasks);
+                setRandomTask(getRandomTask(allDueTasks));
             }
         } catch (error) {
             console.error('Error fetching crops for home:', error);
@@ -247,12 +263,26 @@ export default function HomeScreen() {
                     {/* Today's Work Widget */}
                     <View style={styles.widgetCard}>
                         <View style={styles.widgetHeaderRow}>
-                            <Text style={styles.widgetTitle}>Today's Work</Text>
-                            {dueTasks.length > 0 && <View style={styles.notificationDot} />}
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Text style={styles.widgetTitle}>Today's Work</Text>
+                                {dueTasks.length > 0 && <View style={[styles.notificationDot, { marginLeft: 6 }]} />}
+                            </View>
+                            {dueTasks.length > 1 && (
+                                <TouchableOpacity onPress={() => setRandomTask(getRandomTask(dueTasks))} style={{ padding: 4 }}>
+                                    <MaterialCommunityIcons name="refresh" size={16} color="#00C853" />
+                                </TouchableOpacity>
+                            )}
                         </View>
                         
                         {loadingTasks ? (
                             <ActivityIndicator size="small" color="#00C853" style={{ marginVertical: 10 }} />
+                        ) : (activeCrops.length > 0 && activeCrops.every(c => c.status === 'inactive')) ? (
+                            <View style={{ alignItems: 'center', paddingVertical: 16 }}>
+                                <MaterialCommunityIcons name="clipboard-text-clock-outline" size={32} color="#888" />
+                                <Text style={{ fontSize: 14, color: '#555', marginTop: 8, textAlign: 'center' }}>
+                                    your CROP instructions are getting ready
+                                </Text>
+                            </View>
                         ) : (activeCrops.length === 0 || !hasAnyTasksConfigured) ? (
                             <>
                                 <TouchableOpacity style={styles.taskRow} onPress={() => router.push('/start-crop')}>
@@ -268,25 +298,35 @@ export default function HomeScreen() {
                                     <Text style={styles.taskText}>Start a discussion</Text>
                                 </TouchableOpacity>
                             </>
-                        ) : dueTasks.length === 0 ? (
+                        ) : !randomTask ? (
                             <View style={{ alignItems: 'center', paddingVertical: 10 }}>
                                 <MaterialCommunityIcons name="check-circle-outline" size={24} color="#ccc" />
                                 <Text style={{ fontSize: 12, color: '#888', marginTop: 4 }}>All done for today!</Text>
                             </View>
                         ) : (
-                            dueTasks.slice(0, 3).map(task => (
-                                <View key={task.taskId} style={styles.taskRow}>
-                                    <TouchableOpacity onPress={() => handleCompleteTask(task.activeCropId, task.taskId)}>
-                                        <MaterialCommunityIcons name="circle-outline" size={18} color="#ccc" />
-                                    </TouchableOpacity>
-                                    <Text style={styles.taskText} numberOfLines={1}>{task.title}</Text>
+                            <View style={styles.randomTaskCard}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Text style={{ fontSize: 11, color: '#888', fontWeight: 'bold' }} numberOfLines={1}>
+                                        {randomTask.cropName?.toUpperCase()}
+                                    </Text>
+                                    <View style={{ backgroundColor: '#e8f5e9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                        <Text style={{ fontSize: 10, color: '#00C853', fontWeight: 'bold' }}>
+                                            Day {calculateDays(randomTask.startDate)}
+                                        </Text>
+                                    </View>
                                 </View>
-                            ))
+                                <View style={[styles.taskRow, { marginTop: 12, marginBottom: 0 }]}>
+                                    <MaterialCommunityIcons name="leaf-circle-outline" size={20} color="#00C853" />
+                                    <Text style={[styles.taskText, { fontSize: 13, fontWeight: '600' }]} numberOfLines={2}>
+                                        {randomTask.title}
+                                    </Text>
+                                </View>
+                            </View>
                         )}
                         
-                        {!loadingTasks && activeCrops.length > 0 && dueTasks.length > 3 && (
+                        {!loadingTasks && activeCrops.length > 0 && dueTasks.length > 1 && (
                             <TouchableOpacity onPress={() => router.push('/(tabs)/crops')}>
-                                <Text style={{ fontSize: 11, color: '#00C853', textAlign: 'center', marginTop: 4 }}>+{dueTasks.length - 3} more</Text>
+                                <Text style={{ fontSize: 11, color: '#00C853', textAlign: 'center', marginTop: 8 }}>View {dueTasks.length} pending tasks</Text>
                             </TouchableOpacity>
                         )}
                     </View>
@@ -634,6 +674,15 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#333',
         marginLeft: 8,
+        flex: 1,
+    },
+    randomTaskCard: {
+        backgroundColor: '#fafafa',
+        borderWidth: 1,
+        borderColor: '#f0f0f0',
+        borderRadius: 12,
+        padding: 12,
+        marginTop: 4,
     },
     diagnosticCard: {
         backgroundColor: '#e8f5e9', // Light green background

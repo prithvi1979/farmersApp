@@ -34,7 +34,7 @@ const activeCropSchema = new mongoose.Schema({
   },
   status: { 
     type: String, 
-    enum: ['active', 'harvested', 'cancelled'], 
+    enum: ['active', 'inactive', 'harvested', 'cancelled'], 
     default: 'active' 
   },
 
