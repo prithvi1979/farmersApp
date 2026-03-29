@@ -120,11 +120,22 @@ export default function CropInstructionsScreen() {
                     const currentPhase = firstPendingTask ? (firstPendingTask.phase || 'Daily Care') : uniquePhases[uniquePhases.length - 1];
                     const currentPhaseIndex = uniquePhases.indexOf(currentPhase);
                     
-                    // 3. Keep phases up to currentPhase Index + 1 (Current + Next)
-                    const visiblePhases = uniquePhases.slice(0, currentPhaseIndex + 2);
+                    // 3. Split phases into active and completed, then reorder to put completed at the bottom
+                    const completedPhases = uniquePhases.slice(0, currentPhaseIndex);
+                    const activePhases = uniquePhases.slice(currentPhaseIndex, currentPhaseIndex + 2);
+                    const visiblePhases = [...activePhases, ...completedPhases];
                     
-                    // 4. Filter tasks to only those in the visible phases
-                    const visibleTasks = crop.dailyTasks.filter(t => visiblePhases.includes(t.phase || 'Daily Care'));
+                    // 4. Filter and sort tasks to match the new dynamic phase ordering
+                    const visibleTasks = crop.dailyTasks
+                        .filter(t => visiblePhases.includes(t.phase || 'Daily Care'))
+                        .sort((a, b) => {
+                            const phaseA = a.phase || 'Daily Care';
+                            const phaseB = b.phase || 'Daily Care';
+                            if (phaseA !== phaseB) {
+                                return visiblePhases.indexOf(phaseA) - visiblePhases.indexOf(phaseB);
+                            }
+                            return a.targetDay - b.targetDay;
+                        });
 
                     return visibleTasks.map((task, index) => {
                         const dueDate = new Date(task.dueDate);
