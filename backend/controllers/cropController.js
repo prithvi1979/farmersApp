@@ -31,7 +31,7 @@ Ensure task orders strictly start at 1 and increment by 1 for each phase. Ensure
   
   return new Promise((resolve, reject) => {
     const data = JSON.stringify({
-      model: 'meta-llama/llama-3.1-8b-instruct:free',
+      model: 'openrouter/free',
       messages: [{ role: 'user', content: prompt }]
     });
 
