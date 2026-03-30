@@ -12,6 +12,10 @@ const userSchema = new mongoose.Schema({
     enum: ['guest', 'registered'], 
     default: 'guest' 
   },
+  // OAuth fields
+  email: { type: String, unique: true, sparse: true },
+  oauthProvider: { type: String, enum: ['google', null], default: null },
+  oauthId: { type: String, unique: true, sparse: true },
 
   // --- ONBOARDING PREFERENCES ---
   language: { 

@@ -26,6 +26,7 @@ export default function HomeScreen() {
     const [randomTask, setRandomTask] = useState(null);
     const [hasAnyTasksConfigured, setHasAnyTasksConfigured] = useState(false);
     const [loadingTasks, setLoadingTasks] = useState(true);
+    const [userProfile, setUserProfile] = useState(null);
 
     const calculateDays = (startDateString) => {
         if (!startDateString) return 1;
@@ -97,6 +98,8 @@ export default function HomeScreen() {
             }
 
             const deviceId = await AsyncStorage.getItem('deviceId') || 'default-device-id';
+            // Clear old cached data to avoid showing stale data from old schema
+            await AsyncStorage.removeItem('@cached_crops_data');
             const res = await fetch(`${API_BASE_URL}/crops/active/${deviceId}`);
             const json = await res.json();
             
@@ -108,7 +111,8 @@ export default function HomeScreen() {
                 let anyTasks = false;
                 
                 json.data.forEach(crop => {
-                    if (crop.totalTasksCount > 0) anyTasks = true;
+                    // New schema: a crop has tasks configured if it has phases with tasks (indicated by status being 'active')
+                    if (crop.status === 'active') anyTasks = true;
                     if (crop.dueTasks) {
                         const cropTasks = crop.dueTasks.map(t => ({
                             ...t, 
@@ -141,6 +145,11 @@ export default function HomeScreen() {
     useFocusEffect(
         React.useCallback(() => {
             fetchCropsData();
+            // Load user profile for the avatar
+            AsyncStorage.getItem('@user_profile').then(saved => {
+                if (saved) setUserProfile(JSON.parse(saved));
+                else setUserProfile(null);
+            });
         }, [])
     );
 
@@ -225,17 +234,49 @@ export default function HomeScreen() {
                 {/* Header */}
                 <View style={styles.header}>
                     <View style={styles.logoContainer}>
-                        <View style={styles.logoIconBg}>
-                            <MaterialCommunityIcons name="sprout" size={30} color="#fff" />
-                        </View>
-                        <Text style={styles.logoText}>AgriGrow</Text>
-                        <TouchableOpacity style={styles.assistantButton} onPress={() => router.push('/assistant')}>
-                            <MaterialCommunityIcons name="robot-outline" size={20} color="#00C853" style={{ marginRight: 6 }} />
-                            <Text style={styles.assistantButtonText}>Assistant</Text>
+                        <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
+                            {userProfile?.photoUrl ? (
+                                <Image
+                                    source={{ uri: userProfile.photoUrl }}
+                                    style={styles.headerAvatar}
+                                />
+                            ) : (
+                                <View style={styles.logoIconBg}>
+                                    {userProfile?.name ? (
+                                        <Text style={styles.avatarInitials}>
+                                            {userProfile.name.substring(0, 2).toUpperCase()}
+                                        </Text>
+                                    ) : (
+                                        <MaterialCommunityIcons name="sprout" size={30} color="#fff" />
+                                    )}
+                                </View>
+                            )}
                         </TouchableOpacity>
+                        <View>
+                            <Text style={styles.logoText}>AgriGrow</Text>
+                            <Text style={styles.logoSubText}>
+                                {userProfile?.name ? `Hello, ${userProfile.name.split(' ')[0]}!` : 'Your Smart Farm Companion'}
+                            </Text>
+                        </View>
                     </View>
                     <HeaderDropdown />
                 </View>
+
+                {/* AI Assistant Banner Button */}
+                <TouchableOpacity style={styles.assistantBanner} onPress={() => router.push('/assistant')} activeOpacity={0.85}>
+                    <View style={styles.assistantBannerLeft}>
+                        <View style={styles.assistantIconCircle}>
+                            <MaterialCommunityIcons name="robot" size={26} color="#fff" />
+                        </View>
+                        <View>
+                            <Text style={styles.assistantBannerTitle}>AI Agronomy Assistant</Text>
+                            <Text style={styles.assistantBannerSub}>Ask anything about your crops</Text>
+                        </View>
+                    </View>
+                    <View style={styles.assistantBannerArrow}>
+                        <MaterialCommunityIcons name="arrow-right" size={20} color="#00C853" />
+                    </View>
+                </TouchableOpacity>
 
                 {/* Tools */}
                 <View style={styles.toolsRow}>
@@ -564,7 +605,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 12,
+        paddingTop: 8,
+        paddingBottom: 8,
     },
     logoContainer: {
         flexDirection: 'row',
@@ -572,31 +615,82 @@ const styles = StyleSheet.create({
     },
     logoIconBg: {
         backgroundColor: '#00C853',
-        width: 44,
-        height: 44,
-        borderRadius: 10,
+        width: 48,
+        height: 48,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 10,
     },
+    headerAvatar: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        marginRight: 10,
+    },
+    avatarInitials: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
     logoText: {
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: 'bold',
         color: '#111',
     },
-    assistantButton: {
+    logoSubText: {
+        fontSize: 11,
+        color: '#888',
+        marginTop: 1,
+    },
+    // New prominent Assistant Banner
+    assistantBanner: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#e8f5e9',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-        marginLeft: 12,
+        justifyContent: 'space-between',
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 14,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#e8f5e9',
+        shadowColor: '#00C853',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+        elevation: 3,
     },
-    assistantButtonText: {
-        fontSize: 14,
+    assistantBannerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    assistantIconCircle: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: '#00C853',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 14,
+    },
+    assistantBannerTitle: {
+        fontSize: 15,
         fontWeight: 'bold',
-        color: '#00C853',
+        color: '#111',
+    },
+    assistantBannerSub: {
+        fontSize: 12,
+        color: '#888',
+        marginTop: 2,
+    },
+    assistantBannerArrow: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#e8f5e9',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     cropsContainer: {
         flexDirection: 'row',

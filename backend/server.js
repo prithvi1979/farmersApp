@@ -33,6 +33,7 @@ const communityRoutes = require('./routes/communityRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const weatherRoutes = require('./routes/weatherRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 app.use('/api/users', userRoutes);
 app.use('/api/crops', cropRoutes);
@@ -42,6 +43,7 @@ app.use('/api/community', communityRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/weather', weatherRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/auth', authRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
