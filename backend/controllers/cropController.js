@@ -43,7 +43,11 @@ Respond ONLY with a single valid JSON object exactly like this. No markdown, no 
     const apiKey = process.env.GEMINI_API_KEY;
     const data = JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 8192 }
+      generationConfig: { 
+        temperature: 0.7, 
+        maxOutputTokens: 32768,
+        responseMimeType: 'application/json'
+      }
     });
 
     const options = {
