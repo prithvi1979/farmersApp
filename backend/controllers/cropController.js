@@ -2,18 +2,19 @@ const MasterCrop = require('../models/MasterCrop');
 const ActiveCrop = require('../models/ActiveCrop');
 const CropDictionary = require('../models/CropDictionary');
 const mongoose = require('mongoose');
+const https = require('https');
 
 // Helper function to generate crop timeline via OpenRouter AI
 async function generateMasterCropViaAI(cropName) {
   const prompt = `Generate a cultivation timeline for ${cropName} in JSON format exactly matching this schema:
 {
   "description": "Short description of the crop",
-  "totalDurationDays": integer,
+  "totalDurationDays": 120,
   "phases": [
     {
        "name": "Phase Name (e.g. Pre-planting, Sowing, Vegetative)",
        "order": 1,
-       "durationDays": integer,
+       "durationDays": 20,
        "tasks": [
           {
              "title": "Task Title",
@@ -28,27 +29,49 @@ async function generateMasterCropViaAI(cropName) {
 }
 Ensure task orders strictly start at 1 and increment by 1 for each phase. Ensure phase orders start at 1 and increment by 1. Respond ONLY with valid JSON. Do not include markdown code blocks.`;
   
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'meta-llama/llama-3.1-8b-instruct:free', // Use a fast/free model for generation
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify({
+      model: 'meta-llama/llama-3.1-8b-instruct:free',
       messages: [{ role: 'user', content: prompt }]
-    })
+    });
+
+    const options = {
+      hostname: 'openrouter.ai',
+      port: 443,
+      path: '/api/v1/chat/completions',
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data)
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let responseBody = '';
+      res.on('data', (chunk) => { responseBody += chunk; });
+      res.on('end', () => {
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          return reject(new Error(`OpenRouter API Error: ${res.statusCode} - ${responseBody}`));
+        }
+        try {
+          const parsed = JSON.parse(responseBody);
+          if (!parsed.choices || !parsed.choices[0]) {
+             return reject(new Error('Invalid response skeleton from OpenRouter'));
+          }
+          let content = parsed.choices[0].message.content.trim();
+          content = content.replace(/```json/g, '').replace(/```/g, '').trim();
+          resolve(JSON.parse(content));
+        } catch (e) {
+          reject(new Error(`Failed to parse AI response: ${e.message}`));
+        }
+      });
+    });
+
+    req.on('error', (e) => reject(e));
+    req.write(data);
+    req.end();
   });
-
-  if (!response.ok) {
-    throw new Error('Failed to generate crop from AI');
-  }
-
-  const data = await response.json();
-  let content = data.choices[0].message.content.trim();
-  content = content.replace(/```json/g, '').replace(/```/g, '').trim();
-  
-  return JSON.parse(content);
 }
 
 exports.searchMasterCrops = async (req, res) => {
@@ -105,7 +128,10 @@ exports.startCrop = async (req, res) => {
               await masterCrop.save();
             } catch (aiError) {
               console.error('AI Generation Error:', aiError);
-              return res.status(500).json({ success: false, error: 'Failed to generate crop AI timeline. Please try an existing crop.' });
+              return res.status(500).json({ 
+                  success: false, 
+                  error: `AI Generation failed. Details: ${aiError.message || 'Unknown Error'}.`
+              });
             }
         }
     }
