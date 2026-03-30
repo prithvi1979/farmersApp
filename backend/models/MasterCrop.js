@@ -1,5 +1,25 @@
 const mongoose = require('mongoose');
 
+const taskSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  mediaUrl: { type: String },
+  requiredMaterials: [{ type: String }],
+  taskType: { 
+    type: String, 
+    enum: ['fertilizer', 'irrigation', 'general', 'harvest', 'pesticide', 'sowing'],
+    default: 'general'
+  },
+  order: { type: Number, required: true }
+});
+
+const phaseSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  order: { type: Number, required: true },
+  durationDays: { type: Number, required: true },
+  tasks: [taskSchema]
+});
+
 const masterCropSchema = new mongoose.Schema({
   name: { 
     type: String, 
@@ -15,21 +35,7 @@ const masterCropSchema = new mongoose.Schema({
   imageUrl: { 
     type: String 
   },
-  
-  // The master template built by Admins in the React App
-  timelineTemplate: [
-    {
-      phase: { type: String, required: true },
-      day: { type: Number, required: true },
-      title: { type: String, required: true },
-      instructions: { type: String },
-      taskType: { 
-        type: String, 
-        enum: ['fertilizer', 'irrigation', 'general', 'harvest', 'pesticide', 'sowing'],
-        default: 'general'
-      }
-    }
-  ]
+  phases: [phaseSchema]
 }, {
   timestamps: true
 });

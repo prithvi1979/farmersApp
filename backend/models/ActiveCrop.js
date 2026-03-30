@@ -1,5 +1,37 @@
 const mongoose = require('mongoose');
 
+const activeTaskSchema = new mongoose.Schema({
+  taskId: { type: mongoose.Schema.Types.ObjectId }, // Reference to MasterCrop task ID
+  title: { type: String },
+  description: { type: String },
+  mediaUrl: { type: String },
+  requiredMaterials: [{ type: String }],
+  taskType: { type: String },
+  order: { type: Number },
+  status: { 
+    type: String, 
+    enum: ['locked', 'pending', 'completed'], 
+    default: 'locked' 
+  },
+  isCompleted: { type: Boolean, default: false },
+  completedAt: { type: Date }
+});
+
+const activePhaseSchema = new mongoose.Schema({
+  phaseId: { type: mongoose.Schema.Types.ObjectId }, // Reference to MasterCrop phase ID
+  name: { type: String },
+  order: { type: Number },
+  durationDays: { type: Number },
+  status: { 
+    type: String, 
+    enum: ['locked', 'in_progress', 'completed'], 
+    default: 'locked' 
+  },
+  startDate: { type: Date },
+  expectedEndDate: { type: Date },
+  tasks: [activeTaskSchema]
+});
+
 const activeCropSchema = new mongoose.Schema({
   deviceId: { 
     type: String, 
@@ -13,7 +45,6 @@ const activeCropSchema = new mongoose.Schema({
   cropName: { 
     type: String 
   },
-  
   startDate: { 
     type: Date, 
     default: Date.now 
@@ -37,27 +68,7 @@ const activeCropSchema = new mongoose.Schema({
     enum: ['active', 'inactive', 'harvested', 'cancelled'], 
     default: 'active' 
   },
-
-  // Personalized checklist
-  dailyTasks: [
-    {
-      taskId: { 
-        type: String, 
-        required: true 
-      }, // Unique identifier for this specific instance of the task
-      title: { type: String },
-      instructions: { type: String },
-      taskType: { type: String }, 
-      phase: { type: String },
-      targetDay: { type: Number },
-      dueDate: { type: Date }, // Automatically calculated: startDate + (targetDay * 24h)
-      isCompleted: { 
-        type: Boolean, 
-        default: false 
-      },
-      completedAt: { type: Date }
-    }
-  ]
+  phases: [activePhaseSchema]
 }, {
   timestamps: true
 });
