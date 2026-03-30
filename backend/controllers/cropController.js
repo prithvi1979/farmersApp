@@ -4,44 +4,54 @@ const CropDictionary = require('../models/CropDictionary');
 const mongoose = require('mongoose');
 const https = require('https');
 
-// Helper function to generate crop timeline via OpenRouter AI
+// Helper function to generate crop timeline via Gemini Flash API
 async function generateMasterCropViaAI(cropName) {
-  const prompt = `Generate a cultivation timeline for ${cropName} in JSON format exactly matching this schema:
+  const prompt = `You are an expert agronomist. Generate a comprehensive, realistic cultivation timeline for "${cropName}" from land preparation all the way to post-harvest storage.
+
+REQUIREMENTS:
+- Generate between 6 to 10 phases covering the FULL crop lifecycle (e.g. Land Preparation, Nursery/Propagation, Planting, Vegetative Growth, Flowering & Pollination, Fruit Development, Pest & Disease Management, Pre-Harvest, Harvest, Post-Harvest)
+- Each phase MUST have at least 4 to 6 tasks
+- Each task description must be thorough — at least 3 to 5 detailed sentences explaining exactly what to do, how to do it, and why it matters
+- requiredMaterials must list realistic, specific materials (e.g. "NPK 10-26-26 fertilizer", "Drip irrigation pipes", "Neem oil spray 2%")
+- taskType must be exactly one of: fertilizer, irrigation, general, harvest, pesticide, sowing
+- Phase orders start at 1 and increment by 1
+- Task orders within each phase start at 1 and increment by 1
+
+Respond ONLY with a single valid JSON object exactly like this. No markdown, no code fences, no extra text:
 {
-  "description": "Short description of the crop",
-  "totalDurationDays": 120,
+  "description": "A detailed 2-3 sentence description of the crop and its cultivation requirements",
+  "totalDurationDays": 365,
   "phases": [
     {
-       "name": "Phase Name (e.g. Pre-planting, Sowing, Vegetative)",
-       "order": 1,
-       "durationDays": 20,
-       "tasks": [
-          {
-             "title": "Task Title",
-             "description": "Step by step instructions",
-             "requiredMaterials": ["Compost", "Water"],
-             "taskType": "general", // strictly one of: fertilizer, irrigation, general, harvest, pesticide, sowing
-             "order": 1
-          }
-       ]
+      "name": "Phase Name",
+      "order": 1,
+      "durationDays": 30,
+      "tasks": [
+        {
+          "title": "Task Title",
+          "description": "Detailed multi-sentence description of exactly what to do and how",
+          "requiredMaterials": ["Specific Material 1", "Specific Material 2"],
+          "taskType": "general",
+          "order": 1
+        }
+      ]
     }
   ]
-}
-Ensure task orders strictly start at 1 and increment by 1 for each phase. Ensure phase orders start at 1 and increment by 1. Respond ONLY with valid JSON. Do not include markdown code blocks.`;
+}`;
   
   return new Promise((resolve, reject) => {
+    const apiKey = process.env.GEMINI_API_KEY;
     const data = JSON.stringify({
-      model: 'openrouter/free',
-      messages: [{ role: 'user', content: prompt }]
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.7, maxOutputTokens: 8192 }
     });
 
     const options = {
-      hostname: 'openrouter.ai',
+      hostname: 'generativelanguage.googleapis.com',
       port: 443,
-      path: '/api/v1/chat/completions',
+      path: `/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(data)
       }
@@ -52,18 +62,16 @@ Ensure task orders strictly start at 1 and increment by 1 for each phase. Ensure
       res.on('data', (chunk) => { responseBody += chunk; });
       res.on('end', () => {
         if (res.statusCode < 200 || res.statusCode >= 300) {
-          return reject(new Error(`OpenRouter API Error: ${res.statusCode} - ${responseBody}`));
+          return reject(new Error(`Gemini API Error: ${res.statusCode} - ${responseBody}`));
         }
         try {
           const parsed = JSON.parse(responseBody);
-          if (!parsed.choices || !parsed.choices[0]) {
-             return reject(new Error('Invalid response skeleton from OpenRouter'));
-          }
-          let content = parsed.choices[0].message.content.trim();
-          content = content.replace(/```json/g, '').replace(/```/g, '').trim();
-          resolve(JSON.parse(content));
+          const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!text) return reject(new Error('Empty response from Gemini'));
+          const cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
+          resolve(JSON.parse(cleaned));
         } catch (e) {
-          reject(new Error(`Failed to parse AI response: ${e.message}`));
+          reject(new Error(`Failed to parse Gemini response: ${e.message}`));
         }
       });
     });
