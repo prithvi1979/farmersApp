@@ -11,6 +11,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // ⚠️  Change this to your machine's local IP when backend goes live online
 const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 
+// Category colour fallbacks for library cards with no image
+const LIBRARY_CATEGORY_COLORS = {
+    diseases: '#b71c1c',
+    pests: '#4a148c',
+    general: '#1565c0',
+    techniques: '#e65100',
+    fertilizers: '#33691e',
+    irrigation: '#006064',
+    seeds: '#2e7d32',
+    weather: '#0277bd',
+    market: '#4e342e',
+    'government-schemes': '#37474f',
+};
+
 export default function HomeScreen() {
     const router = useRouter();
 
@@ -31,6 +45,10 @@ export default function HomeScreen() {
     const [newsLoading, setNewsLoading] = useState(true);
     const [selectedArticle, setSelectedArticle] = useState(null);
     const [newsModalVisible, setNewsModalVisible] = useState(false);
+    const [libraryArticles, setLibraryArticles] = useState([]);
+    const [libraryLoading, setLibraryLoading] = useState(true);
+    const [selectedLibraryArticle, setSelectedLibraryArticle] = useState(null);
+    const [libraryModalVisible, setLibraryModalVisible] = useState(false);
 
     const calculateDays = (startDateString) => {
         if (!startDateString) return 1;
@@ -96,8 +114,23 @@ export default function HomeScreen() {
             }
         };
 
+        const fetchLibrary = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/content/library`);
+                const json = await res.json();
+                if (json.success && json.data) {
+                    setLibraryArticles(json.data.slice(0, 4));
+                }
+            } catch (err) {
+                console.log('Library fetch error:', err.message);
+            } finally {
+                setLibraryLoading(false);
+            }
+        };
+
         fetchWeather();
         fetchNews();
+        fetchLibrary();
     }, []);
 
     const fetchCropsData = async () => {
@@ -575,27 +608,50 @@ export default function HomeScreen() {
 
                 {/* Library */}
                 <View style={[styles.sectionHeaderRow, { marginTop: 16 }]}>
-                    <Text style={styles.sectionTitle}>Library</Text>
+                    <Text style={styles.sectionTitle}>📚 Library</Text>
                     <Text style={styles.viewAllText}>Explore</Text>
                 </View>
-                <View style={styles.libraryGrid}>
-                    <View style={styles.libraryCard}>
-                        <View style={[styles.libraryImageBg, { backgroundColor: '#4a4a4a' }]} />
-                        <Text style={styles.libraryCardText}>Pest Control Guide</Text>
+
+                {libraryLoading ? (
+                    <View style={styles.newsLoadingContainer}>
+                        <ActivityIndicator size="small" color="#00C853" />
+                        <Text style={styles.newsLoadingText}>Loading library...</Text>
                     </View>
-                    <View style={styles.libraryCard}>
-                        <View style={[styles.libraryImageBg, { backgroundColor: '#388E3C' }]} />
-                        <Text style={styles.libraryCardText}>Irrigation Mastery</Text>
+                ) : libraryArticles.length === 0 ? (
+                    <View style={styles.newsEmptyContainer}>
+                        <MaterialCommunityIcons name="bookshelf" size={36} color="#ccc" />
+                        <Text style={styles.newsEmptyText}>No articles yet.{`\n`}Check back soon!</Text>
                     </View>
-                    <View style={styles.libraryCard}>
-                        <View style={[styles.libraryImageBg, { backgroundColor: '#795548' }]} />
-                        <Text style={styles.libraryCardText}>Soil Health 101</Text>
+                ) : (
+                    <View style={styles.libraryGrid}>
+                        {libraryArticles.map((article) => (
+                            <TouchableOpacity
+                                key={article._id}
+                                style={styles.libraryCard}
+                                activeOpacity={0.85}
+                                onPress={() => { setSelectedLibraryArticle(article); setLibraryModalVisible(true); }}
+                            >
+                                {article.imageUrl ? (
+                                    <Image
+                                        source={{ uri: article.imageUrl }}
+                                        style={StyleSheet.absoluteFillObject}
+                                        resizeMode="cover"
+                                    />
+                                ) : (
+                                    <View style={[styles.libraryImageBg, { backgroundColor: LIBRARY_CATEGORY_COLORS[article.category] || '#388E3C' }]} />
+                                )}
+                                {/* Dark overlay for text legibility */}
+                                <View style={styles.libraryOverlay} />
+                                {article.readTimeMinutes && (
+                                    <View style={styles.libraryReadTimeBadge}>
+                                        <Text style={styles.libraryReadTimeText}>{article.readTimeMinutes} min</Text>
+                                    </View>
+                                )}
+                                <Text style={styles.libraryCardText} numberOfLines={2}>{article.title}</Text>
+                            </TouchableOpacity>
+                        ))}
                     </View>
-                    <View style={styles.libraryCard}>
-                        <View style={[styles.libraryImageBg, { backgroundColor: '#2E7D32' }]} />
-                        <Text style={styles.libraryCardText}>Harvest Secrets</Text>
-                    </View>
-                </View>
+                )}
 
                 {/* Diagnostic Result Modal */}
                 <Modal
@@ -691,6 +747,69 @@ export default function HomeScreen() {
                             <TouchableOpacity
                                 style={[styles.modalCloseButton, { marginTop: 16 }]}
                                 onPress={() => setNewsModalVisible(false)}
+                            >
+                                <Text style={styles.modalCloseButtonText}>Close</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
+
+                {/* Library Article Detail Modal */}
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={libraryModalVisible}
+                    onRequestClose={() => setLibraryModalVisible(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={[styles.modalContent, { maxHeight: '92%' }]}>
+                            <View style={styles.modalHeader}>
+                                <MaterialCommunityIcons name="book-open-variant" size={22} color="#00C853" />
+                                <Text style={[styles.modalTitle, { fontSize: 15, flex: 1, marginHorizontal: 8 }]} numberOfLines={2}>
+                                    {selectedLibraryArticle?.title}
+                                </Text>
+                                <TouchableOpacity onPress={() => setLibraryModalVisible(false)}>
+                                    <MaterialCommunityIcons name="close" size={24} color="#666" />
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView showsVerticalScrollIndicator={false}>
+                                {selectedLibraryArticle?.imageUrl && (
+                                    <Image
+                                        source={{ uri: selectedLibraryArticle.imageUrl }}
+                                        style={{ width: '100%', height: 180, borderRadius: 12, marginBottom: 12 }}
+                                        resizeMode="cover"
+                                    />
+                                )}
+                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                                    {selectedLibraryArticle?.category && (
+                                        <View style={styles.newsCategoryBadge}>
+                                            <Text style={styles.newsCategoryText}>{selectedLibraryArticle.category.toUpperCase()}</Text>
+                                        </View>
+                                    )}
+                                    {selectedLibraryArticle?.readTimeMinutes && (
+                                        <View style={[styles.newsCategoryBadge, { backgroundColor: '#e3f2fd' }]}>
+                                            <Text style={[styles.newsCategoryText, { color: '#0277BD' }]}>⏱ {selectedLibraryArticle.readTimeMinutes} min read</Text>
+                                        </View>
+                                    )}
+                                    {selectedLibraryArticle?.author && (
+                                        <Text style={styles.newsMeta}>By {selectedLibraryArticle.author}</Text>
+                                    )}
+                                </View>
+                                {selectedLibraryArticle?.summary ? (
+                                    <Text style={{ fontSize: 14, color: '#555', lineHeight: 20, marginBottom: 12, fontStyle: 'italic' }}>
+                                        {selectedLibraryArticle.summary}
+                                    </Text>
+                                ) : null}
+                                <View style={[styles.divider, { marginBottom: 12 }]} />
+                                <Text style={{ fontSize: 14, color: '#333', lineHeight: 22 }}>
+                                    {selectedLibraryArticle?.content?.replace(/<[^>]*>/g, '') || ''}
+                                </Text>
+                            </ScrollView>
+
+                            <TouchableOpacity
+                                style={[styles.modalCloseButton, { marginTop: 16 }]}
+                                onPress={() => setLibraryModalVisible(false)}
                             >
                                 <Text style={styles.modalCloseButtonText}>Close</Text>
                             </TouchableOpacity>
@@ -1179,11 +1298,29 @@ const styles = StyleSheet.create({
         left: 12,
         right: 12,
         color: '#fff',
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: 'bold',
-        textShadowColor: 'rgba(0, 0, 0, 0.5)',
+        textShadowColor: 'rgba(0, 0, 0, 0.7)',
         textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 3,
+        textShadowRadius: 4,
+    },
+    libraryOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.32)',
+    },
+    libraryReadTimeBadge: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 8,
+    },
+    libraryReadTimeText: {
+        color: '#fff',
+        fontSize: 10,
+        fontWeight: '600',
     },
     // ── Modal Styles ────────────────────
     modalOverlay: {

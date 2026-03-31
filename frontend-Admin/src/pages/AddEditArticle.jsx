@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import axios from 'axios';
 import client from '../api/client';
+
+const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 
 const CATEGORIES = [
   { value: 'diseases', label: '🦠 Diseases' },
@@ -20,7 +23,10 @@ const AddEditArticle = ({ isEdit = false }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
   const contentRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -47,6 +53,9 @@ const AddEditArticle = ({ isEdit = false }) => {
           if (contentRef.current) {
             contentRef.current.innerHTML = data.content || '';
           }
+          if (data.imageUrl) {
+            setImagePreview(data.imageUrl);
+          }
         } catch (error) {
           alert('Failed to load article');
           navigate('/library');
@@ -63,8 +72,44 @@ const AddEditArticle = ({ isEdit = false }) => {
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Show local preview immediately
+    const localPreview = URL.createObjectURL(file);
+    setImagePreview(localPreview);
+    setImageUploading(true);
+
+    try {
+      const data = new FormData();
+      data.append('image', file);
+
+      const res = await axios.post(`${API_BASE_URL}/admin/upload-image`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (res.data.success) {
+        setFormData(prev => ({ ...prev, imageUrl: res.data.url }));
+        setImagePreview(res.data.url);
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (err) {
+      alert('Image upload failed. Please try again.');
+      setImagePreview(null);
+      setFormData(prev => ({ ...prev, imageUrl: '' }));
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (imageUploading) {
+      alert('Please wait for the image to finish uploading.');
+      return;
+    }
     setSaving(true);
 
     const payload = {
@@ -143,9 +188,65 @@ const AddEditArticle = ({ isEdit = false }) => {
               </label>
               <input type="text" name="tags" value={formData.tags} onChange={handleChange} style={inputStyle} placeholder="wheat, rust, fungal, disease, kharif" />
             </div>
+            {/* Image Upload */}
             <div>
-              <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 500 }}>Cover Image URL</label>
-              <input type="text" name="imageUrl" value={formData.imageUrl} onChange={handleChange} style={inputStyle} placeholder="https://example.com/image.jpg" />
+              <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 500 }}>Cover Image</label>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  border: '2px dashed var(--border-color)',
+                  borderRadius: '8px',
+                  padding: imagePreview ? '0' : '0.75rem',
+                  cursor: 'pointer',
+                  overflow: 'hidden',
+                  minHeight: '72px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'var(--input-bg)',
+                  position: 'relative',
+                }}
+              >
+                {imageUploading && (
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'white', fontWeight: 600, fontSize: '0.85rem', zIndex: 2
+                  }}>
+                    ⏳ Uploading...
+                  </div>
+                )}
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    style={{ width: '100%', height: '100px', objectFit: 'cover', display: 'block' }}
+                  />
+                ) : (
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                    <div style={{ fontSize: '1.5rem', marginBottom: '0.2rem' }}>🖼️</div>
+                    <span>Click to upload</span><br />
+                    <span style={{ fontSize: '0.7rem' }}>JPG, PNG, WebP — max 5MB</span>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={handleImageChange}
+              />
+              {imagePreview && !imageUploading && (
+                <button
+                  type="button"
+                  onClick={() => { setImagePreview(null); setFormData(prev => ({ ...prev, imageUrl: '' })); }}
+                  style={{ marginTop: '0.3rem', fontSize: '0.75rem', color: '#c53030', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                >
+                  ✕ Remove image
+                </button>
+              )}
             </div>
           </div>
 
@@ -190,7 +291,7 @@ const AddEditArticle = ({ isEdit = false }) => {
           </div>
         </div>
 
-        <button type="submit" className="btn btn-primary" disabled={saving} style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
+        <button type="submit" className="btn btn-primary" disabled={saving || imageUploading} style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
           {saving ? 'Saving...' : (isEdit ? 'Update Article' : 'Publish Article')}
         </button>
 
