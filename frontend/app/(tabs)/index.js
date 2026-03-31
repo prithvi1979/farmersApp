@@ -27,6 +27,10 @@ export default function HomeScreen() {
     const [hasAnyTasksConfigured, setHasAnyTasksConfigured] = useState(false);
     const [loadingTasks, setLoadingTasks] = useState(true);
     const [userProfile, setUserProfile] = useState(null);
+    const [newsArticles, setNewsArticles] = useState([]);
+    const [newsLoading, setNewsLoading] = useState(true);
+    const [selectedArticle, setSelectedArticle] = useState(null);
+    const [newsModalVisible, setNewsModalVisible] = useState(false);
 
     const calculateDays = (startDateString) => {
         if (!startDateString) return 1;
@@ -73,8 +77,27 @@ export default function HomeScreen() {
                 setWeatherLoading(false);
             }
         };
-        fetchWeather();
 
+        const fetchNews = async () => {
+            try {
+                const deviceId = await AsyncStorage.getItem('deviceId');
+                const url = deviceId
+                    ? `${API_BASE_URL}/content/news?deviceId=${deviceId}`
+                    : `${API_BASE_URL}/content/news`;
+                const res = await fetch(url);
+                const json = await res.json();
+                if (json.success && json.data) {
+                    setNewsArticles(json.data);
+                }
+            } catch (err) {
+                console.log('News fetch error:', err.message);
+            } finally {
+                setNewsLoading(false);
+            }
+        };
+
+        fetchWeather();
+        fetchNews();
     }, []);
 
     const fetchCropsData = async () => {
@@ -494,30 +517,61 @@ export default function HomeScreen() {
 
                 {/* Farming News */}
                 <View style={styles.sectionHeaderRow}>
-                    <Text style={styles.sectionTitle}>Farming News</Text>
-                    <Text style={styles.viewAllText}>View All</Text>
-                </View>
-                <View style={styles.newsCard}>
-                    <View style={styles.newsImagePlaceholder}>
-                        <MaterialCommunityIcons name="sprout-outline" size={30} color="#888" />
-                    </View>
-                    <View style={styles.newsContent}>
-                        <Text style={styles.newsTitle}>New irrigation techniques in 2024</Text>
-                        <Text style={styles.newsExcerpt}>How smart sensors are saving 40% more water in arid regions...</Text>
-                    </View>
-                </View>
-                <View style={styles.newsCard}>
-                    <View style={styles.newsImagePlaceholder}>
-                        <MaterialCommunityIcons name="flask-outline" size={30} color="#888" />
-                    </View>
-                    <View style={styles.newsContent}>
-                        <Text style={styles.newsTitle}>The rise of organic fertilizers</Text>
-                        <Text style={styles.newsExcerpt}>Why local farms are switching back to natural alternatives this season...</Text>
-                    </View>
+                    <Text style={styles.sectionTitle}>🌾 Farming News</Text>
+                    {newsArticles.length > 0 && (
+                        <Text style={styles.newsPersonalizedBadge}>Personalized</Text>
+                    )}
                 </View>
 
-                {/* Spacer where Tools used to be */}
-                <View style={{ height: 16 }} />
+                {newsLoading ? (
+                    <View style={styles.newsLoadingContainer}>
+                        <ActivityIndicator size="small" color="#00C853" />
+                        <Text style={styles.newsLoadingText}>Fetching latest news...</Text>
+                    </View>
+                ) : newsArticles.length === 0 ? (
+                    <View style={styles.newsEmptyContainer}>
+                        <MaterialCommunityIcons name="newspaper-variant-outline" size={36} color="#ccc" />
+                        <Text style={styles.newsEmptyText}>No news articles yet.{`\n`}Check back soon!</Text>
+                    </View>
+                ) : (
+                    newsArticles.map((article) => (
+                        <TouchableOpacity
+                            key={article._id}
+                            style={styles.newsCard}
+                            onPress={() => { setSelectedArticle(article); setNewsModalVisible(true); }}
+                            activeOpacity={0.85}
+                        >
+                            {article.imageUrl ? (
+                                <Image
+                                    source={{ uri: article.imageUrl }}
+                                    style={styles.newsImage}
+                                    resizeMode="cover"
+                                />
+                            ) : (
+                                <View style={styles.newsImagePlaceholder}>
+                                    <MaterialCommunityIcons name="newspaper-variant-outline" size={26} color="#aaa" />
+                                </View>
+                            )}
+                            <View style={styles.newsContent}>
+                                {article.category && (
+                                    <View style={styles.newsCategoryBadge}>
+                                        <Text style={styles.newsCategoryText}>{article.category}</Text>
+                                    </View>
+                                )}
+                                <Text style={styles.newsTitle} numberOfLines={2}>{article.title}</Text>
+                                <Text style={styles.newsExcerpt} numberOfLines={2}>
+                                    {article.description?.replace(/<[^>]*>/g, '') || ''}
+                                </Text>
+                                <Text style={styles.newsMeta}>
+                                    {article.source ? `${article.source} · ` : ''}
+                                    {new Date(article.publishedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+                    ))
+                )}
+
+                <View style={{ height: 8 }} />
 
                 {/* Library */}
                 <View style={[styles.sectionHeaderRow, { marginTop: 16 }]}>
@@ -581,6 +635,64 @@ export default function HomeScreen() {
                             
                             <TouchableOpacity style={styles.modalCloseButton} onPress={() => setModalVisible(false)}>
                                 <Text style={styles.modalCloseButtonText}>Done</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
+
+                {/* News Article Detail Modal */}
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={newsModalVisible}
+                    onRequestClose={() => setNewsModalVisible(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={[styles.modalContent, { maxHeight: '90%' }]}>
+                            <View style={styles.modalHeader}>
+                                <MaterialCommunityIcons name="newspaper-variant" size={22} color="#00C853" />
+                                <Text style={[styles.modalTitle, { fontSize: 15, flex: 1, marginHorizontal: 8 }]} numberOfLines={2}>
+                                    {selectedArticle?.title}
+                                </Text>
+                                <TouchableOpacity onPress={() => setNewsModalVisible(false)}>
+                                    <MaterialCommunityIcons name="close" size={24} color="#666" />
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView showsVerticalScrollIndicator={false}>
+                                {selectedArticle?.imageUrl && (
+                                    <Image
+                                        source={{ uri: selectedArticle.imageUrl }}
+                                        style={{ width: '100%', height: 180, borderRadius: 12, marginBottom: 12 }}
+                                        resizeMode="cover"
+                                    />
+                                )}
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
+                                    {selectedArticle?.category && (
+                                        <View style={styles.newsCategoryBadge}>
+                                            <Text style={styles.newsCategoryText}>{selectedArticle.category}</Text>
+                                        </View>
+                                    )}
+                                    <Text style={[styles.newsMeta, { marginLeft: 'auto' }]}>
+                                        {selectedArticle?.source ? `${selectedArticle.source} · ` : ''}
+                                        {selectedArticle && new Date(selectedArticle.publishedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                    </Text>
+                                </View>
+                                <Text style={{ fontSize: 14, color: '#333', lineHeight: 22 }}>
+                                    {selectedArticle?.description?.replace(/<[^>]*>/g, '') || ''}
+                                </Text>
+                                {selectedArticle?.content ? (
+                                    <Text style={{ fontSize: 14, color: '#555', lineHeight: 22, marginTop: 12 }}>
+                                        {selectedArticle.content}
+                                    </Text>
+                                ) : null}
+                            </ScrollView>
+
+                            <TouchableOpacity
+                                style={[styles.modalCloseButton, { marginTop: 16 }]}
+                                onPress={() => setNewsModalVisible(false)}
+                            >
+                                <Text style={styles.modalCloseButtonText}>Close</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -919,18 +1031,25 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         padding: 12,
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         marginBottom: 12,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-        elevation: 1,
+        shadowOpacity: 0.07,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    newsImage: {
+        width: 72,
+        height: 72,
+        borderRadius: 10,
+        marginRight: 12,
+        backgroundColor: '#f0f0f0',
     },
     newsImagePlaceholder: {
-        width: 60,
-        height: 60,
-        borderRadius: 8,
+        width: 72,
+        height: 72,
+        borderRadius: 10,
         backgroundColor: '#f0f0f0',
         justifyContent: 'center',
         alignItems: 'center',
@@ -939,16 +1058,69 @@ const styles = StyleSheet.create({
     newsContent: {
         flex: 1,
     },
+    newsCategoryBadge: {
+        backgroundColor: '#e8f5e9',
+        paddingHorizontal: 7,
+        paddingVertical: 2,
+        borderRadius: 8,
+        alignSelf: 'flex-start',
+        marginBottom: 5,
+    },
+    newsCategoryText: {
+        fontSize: 10,
+        color: '#388E3C',
+        fontWeight: '700',
+        letterSpacing: 0.3,
+    },
     newsTitle: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: 'bold',
         color: '#222',
         marginBottom: 4,
+        lineHeight: 18,
     },
     newsExcerpt: {
         fontSize: 12,
         color: '#777',
         lineHeight: 16,
+        marginBottom: 5,
+    },
+    newsMeta: {
+        fontSize: 11,
+        color: '#aaa',
+        fontStyle: 'italic',
+    },
+    newsPersonalizedBadge: {
+        fontSize: 11,
+        color: '#00C853',
+        fontWeight: '600',
+        backgroundColor: '#e8f5e9',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 8,
+    },
+    newsLoadingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 20,
+        gap: 8,
+    },
+    newsLoadingText: {
+        fontSize: 13,
+        color: '#888',
+        marginLeft: 8,
+    },
+    newsEmptyContainer: {
+        alignItems: 'center',
+        paddingVertical: 24,
+    },
+    newsEmptyText: {
+        fontSize: 13,
+        color: '#bbb',
+        marginTop: 8,
+        textAlign: 'center',
+        lineHeight: 20,
     },
     toolsRow: {
         flexDirection: 'row',

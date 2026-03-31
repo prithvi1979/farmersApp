@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import axios from 'axios';
 import client from '../api/client';
 
+const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 const CATEGORIES = ['General', 'Government Scheme', 'Market Price', 'Weather Alert', 'Pest & Disease', 'Irrigation', 'Subsidy'];
 
 const AddEditNews = ({ isEdit = false }) => {
@@ -9,7 +11,10 @@ const AddEditNews = ({ isEdit = false }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
   const descRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -36,9 +41,11 @@ const AddEditNews = ({ isEdit = false }) => {
             targetCrops: data.targetCrops?.join(', ') || '',
             expiresAt: data.expiresAt ? new Date(data.expiresAt).toISOString().split('T')[0] : '',
           });
-          // Populate contentEditable with existing HTML
           if (descRef.current) {
             descRef.current.innerHTML = data.description || '';
+          }
+          if (data.imageUrl) {
+            setImagePreview(data.imageUrl);
           }
         } catch (error) {
           alert('Failed to load article');
@@ -56,8 +63,44 @@ const AddEditNews = ({ isEdit = false }) => {
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Show local preview immediately
+    const localPreview = URL.createObjectURL(file);
+    setImagePreview(localPreview);
+    setImageUploading(true);
+
+    try {
+      const data = new FormData();
+      data.append('image', file);
+
+      const res = await axios.post(`${API_BASE_URL}/admin/upload-image`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (res.data.success) {
+        setFormData(prev => ({ ...prev, imageUrl: res.data.url }));
+        setImagePreview(res.data.url); // replace local blob with Cloudinary URL
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (err) {
+      alert('Image upload failed. Please try again.');
+      setImagePreview(null);
+      setFormData(prev => ({ ...prev, imageUrl: '' }));
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (imageUploading) {
+      alert('Please wait for the image to finish uploading.');
+      return;
+    }
     setSaving(true);
 
     const payload = {
@@ -122,9 +165,67 @@ const AddEditNews = ({ isEdit = false }) => {
               <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 500 }}>Source</label>
               <input type="text" name="source" value={formData.source} onChange={handleChange} style={inputStyle} placeholder="e.g. Govt of Punjab, Krishi Kendra" />
             </div>
+
+            {/* Image Upload */}
             <div>
-              <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 500 }}>Image URL</label>
-              <input type="text" name="imageUrl" value={formData.imageUrl} onChange={handleChange} style={inputStyle} placeholder="https://example.com/image.jpg" />
+              <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 500 }}>Article Image</label>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  border: '2px dashed var(--border-color)',
+                  borderRadius: '8px',
+                  padding: imagePreview ? '0' : '1rem',
+                  cursor: 'pointer',
+                  overflow: 'hidden',
+                  minHeight: '80px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'var(--input-bg)',
+                  position: 'relative',
+                }}
+              >
+                {imageUploading && (
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'white', fontWeight: 600, fontSize: '0.9rem', zIndex: 2
+                  }}>
+                    ⏳ Uploading...
+                  </div>
+                )}
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    style={{ width: '100%', height: '120px', objectFit: 'cover', display: 'block' }}
+                  />
+                ) : (
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                    <div style={{ fontSize: '1.8rem', marginBottom: '0.25rem' }}>🖼️</div>
+                    <span>Click to upload image</span>
+                    <br />
+                    <span style={{ fontSize: '0.75rem' }}>JPG, PNG, WebP — max 5MB</span>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={handleImageChange}
+              />
+              {imagePreview && !imageUploading && (
+                <button
+                  type="button"
+                  onClick={() => { setImagePreview(null); setFormData(prev => ({ ...prev, imageUrl: '' })); }}
+                  style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: '#c53030', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                >
+                  ✕ Remove image
+                </button>
+              )}
             </div>
           </div>
 
@@ -198,7 +299,7 @@ const AddEditNews = ({ isEdit = false }) => {
           </div>
         </div>
 
-        <button type="submit" className="btn btn-primary" disabled={saving} style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
+        <button type="submit" className="btn btn-primary" disabled={saving || imageUploading} style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
           {saving ? 'Saving...' : (isEdit ? 'Update Article' : 'Publish Article')}
         </button>
       </form>
