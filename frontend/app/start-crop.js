@@ -148,9 +148,9 @@ export default function StartCropScreen() {
                     {showSuggestions && (searchQuery.length > 0) && (
                         <View style={styles.suggestionsCard}>
                             {suggestions.length > 0 ? (
-                                suggestions.map(crop => (
+                                suggestions.map((crop, index) => (
                                     <TouchableOpacity 
-                                        key={crop._id} 
+                                        key={crop._id || `sugg_${index}`} 
                                         style={styles.suggestionItem} 
                                         onPress={() => handleSelectSuggestion(crop)}
                                     >

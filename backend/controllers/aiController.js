@@ -173,10 +173,7 @@ exports.getMandiPrice = async (req, res) => {
                 ],
                 tools: [
                     { googleSearch: {} }
-                ],
-                generationConfig: {
-                    response_mime_type: "application/json",
-                }
+                ]
             })
         });
 
