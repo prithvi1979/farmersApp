@@ -19,9 +19,8 @@ export default function CreateAccountScreen() {
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'],
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 0.6,
+            allowsEditing: false, // Disabled to prevent the Android "Crop Grid" freeze
+            quality: 0.2,
         });
 
         if (!result.canceled) {

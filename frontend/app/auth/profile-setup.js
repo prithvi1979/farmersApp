@@ -27,9 +27,8 @@ export default function ProfileSetupScreen() {
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.5,
+      allowsEditing: false, // Disabled to prevent the Android "Crop Grid" freeze
+      quality: 0.2,
       base64: false
     });
     if (!result.canceled) {
