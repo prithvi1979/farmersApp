@@ -10,7 +10,7 @@ export default function MarketScreen() {
     const [loading, setLoading] = useState(true);
     const [activeCategory, setActiveCategory] = useState('All');
 
-    const categories = ['All', 'Seeds', 'Pesticides', 'Tools', 'Sprays', 'Fertilizers'];
+    const [categories, setCategories] = useState(['All']);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -24,6 +24,13 @@ export default function MarketScreen() {
                 const data = await response.json();
                 if (data.success) {
                     setProducts(data.data);
+                    if (activeCategory === 'All') {
+                        const uniqueCats = ['All', ...new Set(data.data.map(p => p.category))].filter(Boolean);
+                        const formattedCats = uniqueCats.map(c => 
+                            c === 'All' ? 'All' : c.charAt(0).toUpperCase() + c.slice(1)
+                        );
+                        setCategories(formattedCats);
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching products:', error);

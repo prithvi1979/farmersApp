@@ -27,19 +27,13 @@ exports.getProducts = async (req, res) => {
       baseFilter.category = category.toLowerCase();
     }
 
-    let targetingOrLogic = [];
+    const finalQuery = { ...baseFilter };
     if (userPlants.length > 0) {
-      targetingOrLogic = [
+      finalQuery.$or = [
         { targetPlants: { $in: userPlants } },
         { $or: [{ targetPlants: { $exists: false } }, { targetPlants: { $size: 0 } }] },
       ];
-    } else {
-      targetingOrLogic = [
-        { $or: [{ targetPlants: { $exists: false } }, { targetPlants: { $size: 0 } }] },
-      ];
     }
-
-    const finalQuery = { ...baseFilter, $or: targetingOrLogic };
     let products = await Product.find(finalQuery).sort({ createdAt: -1 });
 
     if (userPlants.length > 0) {
