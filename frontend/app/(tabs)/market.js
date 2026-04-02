@@ -1,9 +1,40 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TextInput, TouchableOpacity, Platform, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TextInput, TouchableOpacity, Platform, StatusBar, ActivityIndicator, Image, Linking } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import HeaderDropdown from '../../components/HeaderDropdown';
 
+const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
+
 export default function MarketScreen() {
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [activeCategory, setActiveCategory] = useState('All');
+
+    const categories = ['All', 'Seeds', 'Pesticides', 'Tools', 'Sprays', 'Fertilizers'];
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            setLoading(true);
+            try {
+                let url = `${API_BASE_URL}/market/products`;
+                if (activeCategory !== 'All') {
+                    url += `?category=${activeCategory.toLowerCase()}`;
+                }
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.success) {
+                    setProducts(data.data);
+                }
+            } catch (error) {
+                console.error('Error fetching products:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProducts();
+    }, [activeCategory]);
+
     return (
         <SafeAreaView style={styles.safeArea}>
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -36,9 +67,13 @@ export default function MarketScreen() {
 
                 {/* Categories */}
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesWrapper} contentContainerStyle={styles.categoriesContainer}>
-                    {['Seeds', 'Pesticides', 'Tools', 'Sprays', 'Fertilizers'].map((cat, index) => (
-                        <TouchableOpacity key={index} style={[styles.categoryTab, index === 0 && styles.categoryTabActive]}>
-                            <Text style={[styles.categoryText, index === 0 && styles.categoryTextActive]}>{cat}</Text>
+                    {categories.map((cat, index) => (
+                        <TouchableOpacity 
+                            key={index} 
+                            style={[styles.categoryTab, activeCategory === cat && styles.categoryTabActive]}
+                            onPress={() => setActiveCategory(cat)}
+                        >
+                            <Text style={[styles.categoryText, activeCategory === cat && styles.categoryTextActive]}>{cat}</Text>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
@@ -46,56 +81,45 @@ export default function MarketScreen() {
                 {/* Product List */}
                 <Text style={styles.sectionTitle}>Featured Products</Text>
 
-                {/* Product Card 1 */}
-                <View style={styles.productCard}>
-                    <View style={styles.productImagePlaceholder}>
-                        <MaterialCommunityIcons name="seed" size={40} color="#00C853" />
+                {loading ? (
+                    <ActivityIndicator size="large" color="#00C853" style={{ marginTop: 40 }} />
+                ) : products.length === 0 ? (
+                    <View style={styles.emptyState}>
+                        <MaterialCommunityIcons name="emoticon-sad-outline" size={48} color="#ccc" />
+                        <Text style={styles.emptyText}>No products found in this category.</Text>
                     </View>
-                    <View style={styles.productInfo}>
-                        <Text style={styles.productName}>Premium Tomato Seeds</Text>
-                        <Text style={styles.productDesc}>High yield, disease resistant variety suitable for all weather.</Text>
-                        <View style={styles.productRow}>
-                            <Text style={styles.productPrice}>$4.99</Text>
-                            <TouchableOpacity style={styles.buyButton}>
-                                <Text style={styles.buyButtonText}>Buy Now</Text>
-                            </TouchableOpacity>
+                ) : (
+                    products.map((product) => (
+                        <View key={product._id} style={styles.productCard}>
+                            {product.imageUrl ? (
+                                <Image source={{ uri: product.imageUrl }} style={styles.productImage} />
+                            ) : (
+                                <View style={styles.productImagePlaceholder}>
+                                    <MaterialCommunityIcons name="store" size={40} color="#00C853" />
+                                </View>
+                            )}
+                            <View style={styles.productInfo}>
+                                <Text style={styles.productName} numberOfLines={2}>{product.title}</Text>
+                                <Text style={styles.productDesc} numberOfLines={2}>{product.description}</Text>
+                                <View style={styles.productRow}>
+                                    <Text style={styles.productPrice}>
+                                        {product.price.toString().startsWith('$') || product.price.toString().startsWith('₹') ? product.price : `₹${product.price}`}
+                                    </Text>
+                                    <TouchableOpacity 
+                                        style={styles.buyButton}
+                                        onPress={() => {
+                                            if (product.affiliateLink) {
+                                                Linking.openURL(product.affiliateLink).catch(err => console.error("Couldn't load page", err));
+                                            }
+                                        }}
+                                    >
+                                        <Text style={styles.buyButtonText}>Buy Now</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
                         </View>
-                    </View>
-                </View>
-
-                {/* Product Card 2 */}
-                <View style={styles.productCard}>
-                    <View style={styles.productImagePlaceholder}>
-                        <MaterialCommunityIcons name="spray" size={40} color="#00C853" />
-                    </View>
-                    <View style={styles.productInfo}>
-                        <Text style={styles.productName}>Organic Pest Spray</Text>
-                        <Text style={styles.productDesc}>Eco-friendly spray to protect plants from common insects.</Text>
-                        <View style={styles.productRow}>
-                            <Text style={styles.productPrice}>$12.50</Text>
-                            <TouchableOpacity style={styles.buyButton}>
-                                <Text style={styles.buyButtonText}>Buy Now</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Product Card 3 */}
-                <View style={styles.productCard}>
-                    <View style={styles.productImagePlaceholder}>
-                        <MaterialCommunityIcons name="shovel" size={40} color="#00C853" />
-                    </View>
-                    <View style={styles.productInfo}>
-                        <Text style={styles.productName}>Heavy Duty Shovel</Text>
-                        <Text style={styles.productDesc}>Durable steel shovel for digging, planting and soil turning.</Text>
-                        <View style={styles.productRow}>
-                            <Text style={styles.productPrice}>$24.99</Text>
-                            <TouchableOpacity style={styles.buyButton}>
-                                <Text style={styles.buyButtonText}>Buy Now</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
+                    ))
+                )}
 
             </ScrollView>
         </SafeAreaView>
@@ -261,5 +285,22 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 12,
         fontWeight: 'bold',
+    },
+    emptyState: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 40,
+    },
+    emptyText: {
+        color: '#888',
+        marginTop: 12,
+        fontSize: 15,
+    },
+    productImage: {
+        width: 80,
+        height: 80,
+        borderRadius: 12,
+        marginRight: 16,
+        resizeMode: 'cover',
     },
 });
