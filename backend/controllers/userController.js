@@ -144,3 +144,60 @@ exports.registerUser = async (req, res) => {
     res.status(500).json({ success: false, error: 'Server error during registration' });
   }
 };
+
+// POST /api/users/login
+// Purpose: Authenticates phone/pin and syncs device ID
+exports.loginUser = async (req, res) => {
+  try {
+    const { phoneNumber, pin, deviceId } = req.body;
+    if (!phoneNumber || !pin || !deviceId) {
+       return res.status(400).json({ success: false, error: 'Phone number, PIN, and device ID are required' });
+    }
+
+    let user = await User.findOne({ phoneNumber, pin });
+    if (!user) {
+        return res.status(401).json({ success: false, error: 'Invalid phone number or PIN' });
+    }
+
+    // If logging in from a different device, claim the current deviceId
+    if (user.deviceId !== deviceId) {
+        // Clean up temporary guest profile assigned to this deviceId to free up the unique constraint
+        await User.deleteOne({ deviceId, status: 'guest' });
+        user.deviceId = deviceId;
+        await user.save();
+    }
+
+    res.status(200).json({ success: true, data: user, message: 'Login successful' });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ success: false, error: 'Server error during login' });
+  }
+};
+
+// PATCH /api/users/profile/:deviceId
+// Purpose: Edit existing registered account profile metadata
+exports.updateUserProfile = async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+    const { name, photoUrl, location, language, persona, chosenPlants } = req.body;
+
+    const user = await User.findOne({ deviceId });
+    if (!user) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    if (name) user.name = name;
+    if (photoUrl) user.photoUrl = photoUrl;
+    if (location) user.location = location;
+    if (language) user.language = language;
+    if (persona) user.persona = persona;
+    if (chosenPlants) user.chosenPlants = chosenPlants;
+
+    await user.save();
+    
+    res.status(200).json({ success: true, data: user, message: 'Profile updated' });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ success: false, error: 'Server error updating profile' });
+  }
+};

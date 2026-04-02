@@ -162,6 +162,17 @@ export default function ProfileScreen() {
               <Text style={styles.createAccountBtnText}>Create Account</Text>
             </TouchableOpacity>
 
+            <TouchableOpacity style={styles.loginBtn} onPress={() => router.push('/auth/login-pin')}>
+              <MaterialCommunityIcons name="login" size={20} color="#00C853" style={{ marginRight: 10 }} />
+              <Text style={styles.loginBtnText}>Already have an account? Log In</Text>
+            </TouchableOpacity>
+
+            <View style={{flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 16}}>
+              <View style={{flex: 1, height: 1, backgroundColor: '#e0e0e0'}} />
+              <Text style={{marginHorizontal: 12, color: '#888', fontSize: 12}}>OR</Text>
+              <View style={{flex: 1, height: 1, backgroundColor: '#e0e0e0'}} />
+            </View>
+
             <TouchableOpacity style={styles.googleBtn} onPress={() => router.push('/auth/sign-in')}>
               <MaterialCommunityIcons name="google" size={20} color="#EA4335" style={{ marginRight: 10 }} />
               <Text style={styles.googleBtnText}>Continue with Google</Text>
@@ -272,6 +283,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2, shadowRadius: 4, elevation: 3, marginBottom: 12
   },
   createAccountBtnText: { fontSize: 15, fontWeight: 'bold', color: '#fff' },
+  loginBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#e8f5e9', borderRadius: 12, paddingVertical: 13, paddingHorizontal: 20, width: '100%',
+    shadowColor: '#00C853', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1, shadowRadius: 4, elevation: 2, marginBottom: 16
+  },
+  loginBtnText: { fontSize: 15, fontWeight: 'bold', color: '#00C853' },
   googleBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#e0e0e0',

@@ -69,7 +69,6 @@ export default function CreateAccountScreen() {
                         body: formData,
                         headers: {
                             'Accept': 'application/json',
-                            'Content-Type': 'multipart/form-data',
                         },
                     });
                     const uploadJson = await uploadRes.json();

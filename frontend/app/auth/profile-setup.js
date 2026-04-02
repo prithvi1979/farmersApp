@@ -65,17 +65,52 @@ export default function ProfileSetupScreen() {
     setSaving(true);
     try {
       const deviceId = await AsyncStorage.getItem('deviceId') || 'default-device-id';
+      let uploadedPhotoUrl = null;
 
-      const body = { deviceId };
-      if (name.trim()) body.name = name.trim();
-      if (location) {
-        body.lat = location.lat;
-        body.lng = location.lng;
-        body.city = location.city;
-        body.state = location.state;
+      // Check if photoUri is new (local file) and upload it
+      if (photoUri && !photoUri.startsWith('http')) {
+        const formData = new FormData();
+        const filename = photoUri.split('/').pop();
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : `image`;
+
+        formData.append('image', {
+          uri: Platform.OS === 'ios' ? photoUri.replace('file://', '') : photoUri,
+          name: filename || 'profile.jpg',
+          type,
+        });
+
+        try {
+          const uploadRes = await fetch(`${API_BASE_URL}/admin/upload-image`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'Accept': 'application/json',
+            },
+          });
+          const uploadJson = await uploadRes.json();
+          if (uploadJson.success) {
+            uploadedPhotoUrl = uploadJson.url;
+          }
+        } catch (photoErr) {
+          console.log('Upload error (proceeding without picture):', photoErr);
+        }
       }
 
-      const res = await fetch(`${API_BASE_URL}/auth/profile`, {
+      const body = {};
+      if (name.trim()) body.name = name.trim();
+      if (location) {
+        body.location = {
+          lat: location.lat,
+          lng: location.lng,
+          city: location.city,
+          state: location.state
+        };
+      }
+      if (uploadedPhotoUrl) body.photoUrl = uploadedPhotoUrl;
+      // We can also let them edit language or persona in the future, body handles it neatly
+
+      const res = await fetch(`${API_BASE_URL}/users/profile/${deviceId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -86,12 +121,17 @@ export default function ProfileSetupScreen() {
         // Update locally cached profile
         const saved = await AsyncStorage.getItem('@user_profile');
         const profile = saved ? JSON.parse(saved) : {};
-        await AsyncStorage.setItem('@user_profile', JSON.stringify({ ...profile, ...json.data }));
+        if (json.data.photoUrl) profile.photoUrl = json.data.photoUrl;
+        if (json.data.name) profile.name = json.data.name;
+        if (json.data.location) profile.location = json.data.location;
+
+        await AsyncStorage.setItem('@user_profile', JSON.stringify(profile));
         router.replace('/(tabs)');
       } else {
         Alert.alert('Error', json.error || 'Failed to save profile');
       }
     } catch (err) {
+        console.error('Save profile err:', err);
       Alert.alert('Error', 'Failed to connect to server');
     } finally {
       setSaving(false);
