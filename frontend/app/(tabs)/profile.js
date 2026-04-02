@@ -157,6 +157,11 @@ export default function ProfileScreen() {
             <Text style={styles.guestDesc}>
               Sign in to save your farm data and sync across devices.
             </Text>
+            <TouchableOpacity style={styles.createAccountBtn} onPress={() => router.push('/auth/create-account')}>
+              <MaterialCommunityIcons name="account-plus-outline" size={20} color="#fff" style={{ marginRight: 10 }} />
+              <Text style={styles.createAccountBtnText}>Create Account</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity style={styles.googleBtn} onPress={() => router.push('/auth/sign-in')}>
               <MaterialCommunityIcons name="google" size={20} color="#EA4335" style={{ marginRight: 10 }} />
               <Text style={styles.googleBtnText}>Continue with Google</Text>
@@ -260,6 +265,13 @@ const styles = StyleSheet.create({
   guestIcon: { marginBottom: 12 },
   guestTitle: { fontSize: 18, fontWeight: 'bold', color: '#222', marginBottom: 6 },
   guestDesc: { fontSize: 13, color: '#777', textAlign: 'center', lineHeight: 20, marginBottom: 20 },
+  createAccountBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#00C853', borderRadius: 12, paddingVertical: 13, paddingHorizontal: 20, width: '100%',
+    shadowColor: '#00C853', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2, shadowRadius: 4, elevation: 3, marginBottom: 12
+  },
+  createAccountBtnText: { fontSize: 15, fontWeight: 'bold', color: '#fff' },
   googleBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#e0e0e0',

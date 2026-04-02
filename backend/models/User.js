@@ -60,6 +60,7 @@ const userSchema = new mongoose.Schema({
     sparse: true // Allows multiple nulls for guests
   },
   photoUrl: { type: String },
+  pin: { type: String }, // 4 digit pass code
 
 }, {
   timestamps: true // Automatically manages createdAt and updatedAt

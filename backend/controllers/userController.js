@@ -93,11 +93,22 @@ exports.getUserProfile = async (req, res) => {
 exports.registerUser = async (req, res) => {
   try {
     const { deviceId } = req.params;
-    const { name, phoneNumber, photoUrl, farmInfo } = req.body;
+    const { name, phoneNumber, pin, photoUrl, farmInfo } = req.body;
 
-    // We only want to upgrade if the user provides a phone number (typical for registration)
-    if (!phoneNumber) {
-       return res.status(400).json({ success: false, error: 'Phone number is required for registration' });
+    // We require name and pin for the new auth flow
+    if (!name || !pin) {
+       return res.status(400).json({ success: false, error: 'Name and a 4-digit PIN are required for registration' });
+    }
+
+    if (pin.toString().length !== 4 || isNaN(Number(pin))) {
+       return res.status(400).json({ success: false, error: 'PIN must be exactly 4 numeric digits' });
+    }
+
+    if (phoneNumber) {
+        const cleanedPhone = phoneNumber.toString().replace(/\D/g, '');
+        if (cleanedPhone.length !== 10) {
+            return res.status(400).json({ success: false, error: 'Phone number must be 10 digits if provided' });
+        }
     }
 
     // Find the guest profile
@@ -109,15 +120,18 @@ exports.registerUser = async (req, res) => {
     }
 
     // Check if phone number is already taken by another device
-    const existingPhone = await User.findOne({ phoneNumber });
-    if (existingPhone && existingPhone.deviceId !== deviceId) {
-        return res.status(409).json({ success: false, error: 'Phone number already registered to another account' });
+    if (phoneNumber) {
+        const existingPhone = await User.findOne({ phoneNumber });
+        if (existingPhone && existingPhone.deviceId !== deviceId) {
+            return res.status(409).json({ success: false, error: 'Phone number already registered to another account' });
+        }
+        user.phoneNumber = phoneNumber;
     }
 
     // Update fields
     user.status = 'registered';
-    user.name = name || user.name;
-    user.phoneNumber = phoneNumber;
+    user.name = name;
+    user.pin = pin;
     if (photoUrl) user.photoUrl = photoUrl;
     if (farmInfo) user.farmInfo = { ...user.farmInfo, ...farmInfo };
 
