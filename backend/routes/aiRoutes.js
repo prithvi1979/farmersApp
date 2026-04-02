@@ -12,4 +12,9 @@ router.post('/diagnose', aiController.diagnosePlant);
 // @access  Public
 router.post('/chat', aiController.chat);
 
+// @route   POST /api/ai/mandi-price
+// @desc    Check latest crop price at nearest mandi using Gemini Grounding
+// @access  Public
+router.post('/mandi-price', aiController.getMandiPrice);
+
 module.exports = router;

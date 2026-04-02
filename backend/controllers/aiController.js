@@ -142,3 +142,72 @@ exports.chat = async (req, res) => {
         res.status(500).json({ success: false, error: 'Internal Server Error' });
     }
 };
+
+exports.getMandiPrice = async (req, res) => {
+    try {
+        const { crop, location } = req.body;
+        
+        if (!crop || !location) {
+            return res.status(400).json({ success: false, error: 'Crop and location are required' });
+        }
+        
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            return res.status(500).json({ success: false, error: 'GEMINI_API_KEY is not configured in .env' });
+        }
+
+        const prompt = `You are an agronomy market specialist. Find the nearest Mandi (agricultural market) to ${location} and get the very latest mandi price for ${crop}. \nReturn ONLY a valid JSON object with three keys: 'mandiName' (string, the name and location of the mandi), 'price' (string, the exact price or price range with currency e.g., "₹45/kg"), and 'date' (string, the precise date of that price). Do not include any markdown or explanatory text, just the raw JSON.`;
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                contents: [
+                    {
+                        parts: [
+                            { text: prompt }
+                        ]
+                    }
+                ],
+                tools: [
+                    { googleSearch: {} }
+                ],
+                generationConfig: {
+                    response_mime_type: "application/json",
+                }
+            })
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok) {
+            console.error('Gemini API Error:', result);
+            return res.status(500).json({ success: false, error: result.error?.message || 'Failed to analyze search data with AI' });
+        }
+
+        const aiResponseText = result.candidates[0].content.parts[0].text;
+        
+        try {
+            const parsedData = JSON.parse(aiResponseText);
+            return res.json({ success: true, data: parsedData });
+        } catch (parseError) {
+            console.error('Failed to parse AI response:', aiResponseText);
+            const jsonMatch = aiResponseText.match(/{[\s\S]*}/);
+            if (jsonMatch) {
+                try {
+                    const extractedData = JSON.parse(jsonMatch[0]);
+                    return res.json({ success: true, data: extractedData });
+                } catch (e) {
+                    return res.status(500).json({ success: false, error: 'Invalid format received from AI' });
+                }
+            }
+            return res.status(500).json({ success: false, error: 'Invalid format received from AI' });
+        }
+        
+    } catch (error) {
+        console.error('Mandi Price API Error:', error);
+        res.status(500).json({ success: false, error: 'Internal Server Error' });
+    }
+};

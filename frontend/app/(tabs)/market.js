@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TextInput, TouchableOpacity, Platform, StatusBar, ActivityIndicator, Image, Linking } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import HeaderDropdown from '../../components/HeaderDropdown';
 
 const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 
 export default function MarketScreen() {
+    const router = useRouter();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeCategory, setActiveCategory] = useState('All');
@@ -71,6 +73,24 @@ export default function MarketScreen() {
                         placeholderTextColor="#888"
                     />
                 </View>
+
+                {/* Mandi Price Checker CTA */}
+                <TouchableOpacity 
+                    style={styles.mandiCtaArea}
+                    activeOpacity={0.8}
+                    onPress={() => router.push('/mandi-checker')}
+                >
+                    <View style={styles.mandiCtaContent}>
+                        <View style={styles.mandiIconWrapper}>
+                            <MaterialCommunityIcons name="storefront-outline" size={22} color="#00C853" />
+                        </View>
+                        <View style={styles.mandiTextContainer}>
+                            <Text style={styles.mandiCtaTitle}>Check Price in nearest Mandi</Text>
+                            <Text style={styles.mandiCtaSub}>Get live location-based AI pricing</Text>
+                        </View>
+                    </View>
+                    <MaterialCommunityIcons name="chevron-right" size={24} color="#888" />
+                </TouchableOpacity>
 
                 {/* Categories */}
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesWrapper} contentContainerStyle={styles.categoriesContainer}>
@@ -197,6 +217,48 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 15,
         color: '#333',
+    },
+    mandiCtaArea: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        elevation: 2,
+    },
+    mandiCtaContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    mandiIconWrapper: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#e8f5e9',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    mandiTextContainer: {
+        justifyContent: 'center',
+    },
+    mandiCtaTitle: {
+        fontSize: 15,
+        fontWeight: 'bold',
+        color: '#222',
+        marginBottom: 2,
+    },
+    mandiCtaSub: {
+        fontSize: 12,
+        color: '#666',
     },
     categoriesWrapper: {
         marginBottom: 24,
