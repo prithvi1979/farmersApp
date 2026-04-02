@@ -9,14 +9,13 @@ const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 export default function LoginPinScreen() {
     const router = useRouter();
 
-    const [phoneNumber, setPhoneNumber] = useState('');
+    const [identifier, setIdentifier] = useState('');
     const [pin, setPin] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
     const handleLogin = async () => {
-        let cleanPhone = phoneNumber.trim().replace(/\D/g, '');
-        if (!cleanPhone || cleanPhone.length !== 10) {
-            Alert.alert('Error', 'Please enter a valid 10-digit phone number.');
+        if (!identifier.trim()) {
+            Alert.alert('Error', 'Please enter your Phone Number or Name.');
             return;
         }
 
@@ -30,7 +29,7 @@ export default function LoginPinScreen() {
             const deviceId = await AsyncStorage.getItem('deviceId') || 'default-device-id';
             
             const payload = {
-                phoneNumber: cleanPhone,
+                identifier: identifier.trim(),
                 pin: pin,
                 deviceId: deviceId
             };
@@ -79,16 +78,15 @@ export default function LoginPinScreen() {
                 </View>
 
                 <View style={styles.formCard}>
-                    <Text style={styles.label}>Registered Phone Number</Text>
+                    <Text style={styles.label}>Registered Phone Number or Name</Text>
                     <View style={styles.inputContainer}>
-                        <MaterialCommunityIcons name="phone-outline" size={20} color="#888" style={styles.inputIcon} />
+                        <MaterialCommunityIcons name="account-search-outline" size={20} color="#888" style={styles.inputIcon} />
                         <TextInput
                             style={styles.input}
-                            placeholder="10-digit mobile number"
-                            value={phoneNumber}
-                            onChangeText={setPhoneNumber}
-                            keyboardType="phone-pad"
-                            maxLength={10}
+                            placeholder="e.g. Ramesh Kumar or 9876543210"
+                            value={identifier}
+                            onChangeText={setIdentifier}
+                            autoCapitalize="words"
                             editable={!submitting}
                         />
                     </View>

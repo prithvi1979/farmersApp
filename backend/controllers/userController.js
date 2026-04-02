@@ -146,17 +146,24 @@ exports.registerUser = async (req, res) => {
 };
 
 // POST /api/users/login
-// Purpose: Authenticates phone/pin and syncs device ID
+// Purpose: Authenticates phone/name + pin and syncs device ID
 exports.loginUser = async (req, res) => {
   try {
-    const { phoneNumber, pin, deviceId } = req.body;
-    if (!phoneNumber || !pin || !deviceId) {
-       return res.status(400).json({ success: false, error: 'Phone number, PIN, and device ID are required' });
+    const { identifier, pin, deviceId } = req.body;
+    if (!identifier || !pin || !deviceId) {
+       return res.status(400).json({ success: false, error: 'Phone Number or Name, PIN, and device ID are required' });
     }
 
-    let user = await User.findOne({ phoneNumber, pin });
+    let user = await User.findOne({ 
+        $or: [
+           { phoneNumber: identifier },
+           { name: { $regex: new RegExp('^' + identifier.trim() + '$', 'i') } }
+        ],
+        pin 
+    });
+    
     if (!user) {
-        return res.status(401).json({ success: false, error: 'Invalid phone number or PIN' });
+        return res.status(401).json({ success: false, error: 'Invalid login credentials' });
     }
 
     // If logging in from a different device, claim the current deviceId
@@ -179,7 +186,7 @@ exports.loginUser = async (req, res) => {
 exports.updateUserProfile = async (req, res) => {
   try {
     const { deviceId } = req.params;
-    const { name, photoUrl, location, language, persona, chosenPlants } = req.body;
+    const { name, photoUrl, location, language, persona, chosenPlants, pin } = req.body;
 
     const user = await User.findOne({ deviceId });
     if (!user) {
@@ -192,6 +199,7 @@ exports.updateUserProfile = async (req, res) => {
     if (language) user.language = language;
     if (persona) user.persona = persona;
     if (chosenPlants) user.chosenPlants = chosenPlants;
+    if (pin && pin.toString().length === 4 && !isNaN(Number(pin))) user.pin = pin;
 
     await user.save();
     
