@@ -289,25 +289,11 @@ export default function HomeScreen() {
 
                 {/* Header */}
                 <View style={styles.header}>
+                    {/* Left: Agrigrow Logo */}
                     <View style={styles.logoContainer}>
-                        <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
-                            {userProfile?.photoUrl ? (
-                                <Image
-                                    source={{ uri: userProfile.photoUrl }}
-                                    style={styles.headerAvatar}
-                                />
-                            ) : (
-                                <View style={styles.logoIconBg}>
-                                    {userProfile?.name ? (
-                                        <Text style={styles.avatarInitials}>
-                                            {userProfile.name.substring(0, 2).toUpperCase()}
-                                        </Text>
-                                    ) : (
-                                        <MaterialCommunityIcons name="sprout" size={30} color="#fff" />
-                                    )}
-                                </View>
-                            )}
-                        </TouchableOpacity>
+                        <View style={styles.logoIconBg}>
+                            <MaterialCommunityIcons name="sprout" size={28} color="#fff" />
+                        </View>
                         <View>
                             <Text style={styles.logoText}>AgriGrow</Text>
                             <Text style={styles.logoSubText}>
@@ -315,7 +301,38 @@ export default function HomeScreen() {
                             </Text>
                         </View>
                     </View>
-                    <HeaderDropdown />
+
+                    {/* Right: Dropdown menu & Avatar */}
+                    <View style={styles.headerRightContainer}>
+                        <TouchableOpacity style={styles.avatarWrapper} onPress={() => {
+                            if (userProfile?.name) {
+                                router.push('/(tabs)/profile');
+                            } else {
+                                router.push('/auth/create-account');
+                            }
+                        }}>
+                            {userProfile?.photoUrl ? (
+                                <Image
+                                    source={{ uri: userProfile.photoUrl }}
+                                    style={styles.headerAvatar}
+                                />
+                            ) : userProfile?.name ? (
+                                <View style={styles.avatarInitialsBg}>
+                                    <Text style={styles.avatarInitials}>
+                                        {userProfile.name.substring(0, 2).toUpperCase()}
+                                    </Text>
+                                </View>
+                            ) : (
+                                <View style={{ alignItems: 'center' }}>
+                                    <View style={[styles.avatarInitialsBg, { backgroundColor: '#e0e0e0', width: 36, height: 36, borderRadius: 18 }]}>
+                                        <MaterialCommunityIcons name="account-outline" size={20} color="#666" />
+                                    </View>
+                                    <Text style={{ fontSize: 9, color: '#00C853', fontWeight: 'bold', marginTop: 2 }}>Sign Up</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                        <HeaderDropdown />
+                    </View>
                 </View>
 
                 {/* AI Assistant Banner Button */}
@@ -342,9 +359,9 @@ export default function HomeScreen() {
                         activeOpacity={0.7}
                     >
                         <View style={styles.toolIconContainer}>
-                            <MaterialCommunityIcons name="seed" size={28} color="#00C853" />
+                            <MaterialCommunityIcons name="seed" size={24} color="#00C853" />
                         </View>
-                        <Text style={styles.toolText}>SEED CALC</Text>
+                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>SEED CALC</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.toolCard}
@@ -352,9 +369,9 @@ export default function HomeScreen() {
                         activeOpacity={0.7}
                     >
                         <View style={styles.toolIconContainer}>
-                            <MaterialCommunityIcons name="calculator" size={28} color="#00C853" />
+                            <MaterialCommunityIcons name="calculator" size={24} color="#00C853" />
                         </View>
-                        <Text style={styles.toolText}>FERT CALC</Text>
+                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>FERT CALC</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.toolCard}
@@ -362,9 +379,9 @@ export default function HomeScreen() {
                         activeOpacity={0.7}
                     >
                         <View style={styles.toolIconContainer}>
-                            <MaterialCommunityIcons name="bug" size={28} color="#00C853" />
+                            <MaterialCommunityIcons name="bug" size={24} color="#00C853" />
                         </View>
-                        <Text style={styles.toolText}>PEST DOSE</Text>
+                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>PEST DOSE</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.toolCard}
@@ -372,9 +389,19 @@ export default function HomeScreen() {
                         activeOpacity={0.7}
                     >
                         <View style={styles.toolIconContainer}>
-                            <MaterialCommunityIcons name="water" size={28} color="#0288D1" />
+                            <MaterialCommunityIcons name="water" size={24} color="#0288D1" />
                         </View>
-                        <Text style={styles.toolText}>IRRIGATION</Text>
+                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>IRRIGATION</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.toolCard}
+                        onPress={() => router.push('/soil-test')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={styles.toolIconContainer}>
+                            <MaterialCommunityIcons name="flask-outline" size={24} color="#795548" />
+                        </View>
+                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>SOIL TEST</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -502,21 +529,25 @@ export default function HomeScreen() {
                             style={styles.tallActionBgImage}
                             imageStyle={{ borderRadius: 16, resizeMode: 'cover' }}
                         >
-                            <View style={[styles.tallActionOverlay, { backgroundColor: 'rgba(0,0,0,0.25)' }]}>
-                                <View style={styles.heroBadge}>
-                                    <Text style={styles.heroBadgeText}>DIAGNOSTIC</Text>
-                                </View>
-                                <Text style={styles.tallActionTitle}>Identify plant illness instantly.</Text>
-                                
-                                <View style={[styles.heroButton, { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16 }]}>
+                            <View style={[styles.tallActionOverlay, { backgroundColor: 'rgba(0,0,0,0.3)', padding: 10 }]}>
+                                {/* Swap: Big Scan Now button at the TOP */}
+                                <View style={[styles.heroButtonLarge, { backgroundColor: '#386A32', alignSelf: 'flex-start' }]}>
                                     {diagnosing ? (
                                         <ActivityIndicator size="small" color="#fff" />
                                     ) : (
                                         <>
-                                            <MaterialCommunityIcons name="camera" size={14} color="#fff" style={{ marginRight: 4 }} />
-                                            <Text style={[styles.heroButtonText, { fontSize: 13 }]}>Scan Now</Text>
+                                            <MaterialCommunityIcons name="camera" size={20} color="#fff" style={{ marginRight: 6 }} />
+                                            <Text style={styles.heroButtonLargeText}>Scan Now</Text>
                                         </>
                                     )}
+                                </View>
+                                
+                                {/* Bottom section: Title and Badge Swap */}
+                                <View style={{ marginTop: 'auto' }}>
+                                    <View style={styles.heroBadge}>
+                                        <Text style={styles.heroBadgeText}>DIAGNOSTIC</Text>
+                                    </View>
+                                    <Text style={[styles.tallActionTitle, { marginTop: 8 }]}>Identify plant illness instantly.</Text>
                                 </View>
                             </View>
                         </ImageBackground>
@@ -533,15 +564,19 @@ export default function HomeScreen() {
                             style={styles.tallActionBgImage}
                             imageStyle={{ borderRadius: 16 }}
                         >
-                            <View style={[styles.tallActionOverlay, { backgroundColor: 'rgba(0,0,0,0.35)' }]}>
-                                <View style={[styles.heroBadge, { backgroundColor: '#E64A19' }]}>
-                                    <Text style={styles.heroBadgeText}>NEW CROP</Text>
+                            <View style={[styles.tallActionOverlay, { backgroundColor: 'rgba(0,0,0,0.35)', padding: 10 }]}>
+                                {/* Swap: Big Start Crop button at the TOP */}
+                                <View style={[styles.heroButtonLarge, { backgroundColor: '#D84315', alignSelf: 'flex-start' }]}>
+                                    <MaterialCommunityIcons name="seed-outline" size={20} color="#fff" style={{ marginRight: 6 }} />
+                                    <Text style={styles.heroButtonLargeText}>Start Crop</Text>
                                 </View>
-                                <Text style={styles.tallActionTitle}>Add a new crop to your farm.</Text>
-                                
-                                <View style={[styles.heroButton, { backgroundColor: '#D84315', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16 }]}>
-                                    <MaterialCommunityIcons name="seed-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
-                                    <Text style={[styles.heroButtonText, { fontSize: 13 }]}>Start</Text>
+
+                                {/* Bottom section: Title and Badge Swap */}
+                                <View style={{ marginTop: 'auto' }}>
+                                    <View style={[styles.heroBadge, { backgroundColor: '#E64A19' }]}>
+                                        <Text style={styles.heroBadgeText}>NEW CROP</Text>
+                                    </View>
+                                    <Text style={[styles.tallActionTitle, { marginTop: 8 }]}>Add a new crop to your farm.</Text>
                                 </View>
                             </View>
                         </ImageBackground>
@@ -836,41 +871,55 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
-        paddingTop: 8,
-        paddingBottom: 8,
+        marginBottom: 6,
+        paddingTop: 4,
+        paddingBottom: 4,
     },
     logoContainer: {
         flexDirection: 'row',
         alignItems: 'center',
     },
+    headerRightContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    avatarWrapper: {
+        marginRight: 6,
+    },
     logoIconBg: {
         backgroundColor: '#00C853',
-        width: 48,
-        height: 48,
-        borderRadius: 12,
+        width: 40,
+        height: 40,
+        borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 10,
+        marginRight: 8,
     },
     headerAvatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        marginRight: 10,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+    },
+    avatarInitialsBg: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#00C853',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     avatarInitials: {
         color: '#fff',
-        fontSize: 18,
+        fontSize: 14,
         fontWeight: 'bold',
     },
     logoText: {
-        fontSize: 22,
+        fontSize: 20,
         fontWeight: 'bold',
         color: '#111',
     },
     logoSubText: {
-        fontSize: 11,
+        fontSize: 10,
         color: '#888',
         marginTop: 1,
     },
@@ -880,15 +929,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 14,
-        marginBottom: 20,
+        borderRadius: 14,
+        padding: 10,
+        marginBottom: 12,
         borderWidth: 1,
         borderColor: '#e8f5e9',
         shadowColor: '#00C853',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.12,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
         elevation: 3,
     },
     assistantBannerLeft: {
@@ -897,16 +946,16 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     assistantIconCircle: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         backgroundColor: '#00C853',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 14,
+        marginRight: 12,
     },
     assistantBannerTitle: {
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: 'bold',
         color: '#111',
     },
@@ -925,7 +974,7 @@ const styles = StyleSheet.create({
     },
     cropsContainer: {
         flexDirection: 'row',
-        marginBottom: 24,
+        marginBottom: 16,
     },
     cropItem: {
         alignItems: 'center',
@@ -954,7 +1003,7 @@ const styles = StyleSheet.create({
     widgetsRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 24,
+        marginBottom: 16,
     },
     widgetCard: {
         flex: 1,
@@ -1096,7 +1145,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#fff',
         lineHeight: 22,
-        flex: 1,
         marginTop: 12,
     },
     heroButton: {
@@ -1105,6 +1153,24 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         alignSelf: 'flex-start',
         marginTop: 'auto',
+    },
+    heroButtonLarge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderRadius: 18,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    heroButtonLargeText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+        letterSpacing: 0.5,
     },
     heroButtonText: {
         color: '#fff',
@@ -1244,15 +1310,15 @@ const styles = StyleSheet.create({
     toolsRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 28,
+        marginBottom: 16,
     },
     toolCard: {
         flex: 1,
         backgroundColor: '#fff',
-        borderRadius: 14,
-        paddingVertical: 18,
-        paddingHorizontal: 8,
-        marginHorizontal: 4,
+        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 2,
+        marginHorizontal: 3,
         alignItems: 'center',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -1261,19 +1327,19 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     toolIconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
+        width: 38,
+        height: 38,
+        borderRadius: 10,
         backgroundColor: '#e8f5e9',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 10,
+        marginBottom: 6,
     },
     toolText: {
-        fontSize: 11,
+        fontSize: 9,
         fontWeight: 'bold',
         color: '#444',
-        letterSpacing: 0.5,
+        letterSpacing: 0.2,
         textAlign: 'center',
     },
     libraryGrid: {

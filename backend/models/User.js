@@ -52,6 +52,20 @@ const userSchema = new mongoose.Schema({
     }
   },
 
+  // --- SOIL TEST ---
+  soilTest: {
+    ph: { type: Number },
+    texture: { type: String, enum: ['sand', 'silt', 'clay', 'loam', 'heavy_clay'] },
+    drainageTime: { type: String, enum: ['fast', 'ideal', 'slow'] },
+    organicMatter: { type: String, enum: ['low', 'medium', 'high'] },
+    npk: {
+      nitrogen: { type: String, enum: ['low', 'medium', 'high'] },
+      phosphorus: { type: String, enum: ['low', 'medium', 'high'] },
+      potassium: { type: String, enum: ['low', 'medium', 'high'] }
+    },
+    lastTestedOn: { type: Date }
+  },
+
   // --- REGISTERED PROFILE ---
   name: { type: String },
   phoneNumber: { 

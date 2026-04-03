@@ -17,4 +17,9 @@ router.post('/chat', aiController.chat);
 // @access  Public
 router.post('/mandi-price', aiController.getMandiPrice);
 
+// @route   POST /api/ai/soil-report
+// @desc    Generate a Soil Report using Gemini AI
+// @access  Public
+router.post('/soil-report', aiController.generateSoilReport);
+
 module.exports = router;

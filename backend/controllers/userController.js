@@ -186,7 +186,7 @@ exports.loginUser = async (req, res) => {
 exports.updateUserProfile = async (req, res) => {
   try {
     const { deviceId } = req.params;
-    const { name, photoUrl, location, language, persona, chosenPlants, pin } = req.body;
+    const { name, photoUrl, location, language, persona, chosenPlants, pin, soilTest } = req.body;
 
     const user = await User.findOne({ deviceId });
     if (!user) {
@@ -200,6 +200,10 @@ exports.updateUserProfile = async (req, res) => {
     if (persona) user.persona = persona;
     if (chosenPlants) user.chosenPlants = chosenPlants;
     if (pin && pin.toString().length === 4 && !isNaN(Number(pin))) user.pin = pin;
+
+    if (soilTest) {
+      user.soilTest = { ...user.soilTest, ...soilTest, lastTestedOn: new Date() };
+    }
 
     await user.save();
     

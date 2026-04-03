@@ -3,11 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } fr
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const LOCATIONS = ['Punjab', 'West Bengal', 'Maharashtra', 'Karnataka', 'Gujarat'];
-
 export default function PersonaScreen() {
     const router = useRouter();
-    const [selectedLocation, setSelectedLocation] = useState('West Bengal');
 
     const handleSelectPersona = (personaType) => {
         router.push({
@@ -25,23 +22,6 @@ export default function PersonaScreen() {
 
                 <Text style={styles.title}>Tell us about your farm</Text>
                 <Text style={styles.subtitle}>This helps us customize advisory for you.</Text>
-
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Where are you located?</Text>
-                    <View style={styles.locationContainer}>
-                        {LOCATIONS.map((loc) => (
-                            <TouchableOpacity
-                                key={loc}
-                                style={[styles.locationChip, selectedLocation === loc && styles.locationChipActive]}
-                                onPress={() => setSelectedLocation(loc)}
-                            >
-                                <Text style={[styles.locationText, selectedLocation === loc && styles.locationTextActive]}>
-                                    {loc}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Which best describes you?</Text>
@@ -129,31 +109,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#333',
         marginBottom: 16,
-    },
-    locationContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-    },
-    locationChip: {
-        backgroundColor: '#ffffff',
-        paddingVertical: 10,
-        paddingHorizontal: 16,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
-    },
-    locationChipActive: {
-        backgroundColor: '#e8f5e9',
-        borderColor: '#4caf50',
-    },
-    locationText: {
-        fontSize: 14,
-        color: '#555',
-    },
-    locationTextActive: {
-        color: '#2e7d32',
-        fontWeight: '600',
     },
     personaCard: {
         flexDirection: 'row',

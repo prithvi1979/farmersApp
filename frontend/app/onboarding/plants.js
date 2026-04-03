@@ -119,6 +119,11 @@ export default function PlantsScreen() {
 
                     <Text style={styles.title}>What are you growing?</Text>
                     <Text style={styles.subtitle}>Select the plants you want to track.</Text>
+                    
+                    <View style={{backgroundColor: '#e8f5e9', padding: 12, borderRadius: 8, marginBottom: 20, flexDirection: 'row', alignItems: 'center'}}>
+                        <MaterialCommunityIcons name="information" size={20} color="#2e7d32" style={{marginRight: 8}} />
+                        <Text style={{color: '#2e7d32', fontSize: 13, flex: 1}}>Choose at least 1 plant to proceed. You can edit them later.</Text>
+                    </View>
 
                     {CATEGORIES.map(category => (
                         <View key={category.title} style={styles.categorySection}>
@@ -204,7 +209,7 @@ const styles = StyleSheet.create({
     subtitle: {
         fontSize: 15,
         color: '#666',
-        marginBottom: 20,
+        marginBottom: 12,
     },
     categorySection: {
         marginBottom: 24,

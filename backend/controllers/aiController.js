@@ -208,3 +208,66 @@ exports.getMandiPrice = async (req, res) => {
         res.status(500).json({ success: false, error: 'Internal Server Error' });
     }
 };
+
+exports.generateSoilReport = async (req, res) => {
+    try {
+        const { soilTest } = req.body;
+        if (!soilTest) {
+            return res.status(400).json({ success: false, error: 'Soil test data is required' });
+        }
+
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            return res.status(500).json({ success: false, error: 'GEMINI_API_KEY is not configured' });
+        }
+
+        const prompt = `You are an expert agronomist. Analyze these soil test results: ${JSON.stringify(soilTest)}. 
+Return ONLY a valid JSON object with the following keys:
+- 'score' (number between 0 and 100 representing overall soil health)
+- 'cropsToGrow' (array of strings, e.g., ["Tomato", "Carrot"])
+- 'cropsToAvoid' (array of strings, e.g., ["Rice"])
+- 'fertilizerPlan' (array of objects with 'period' (string) and 'action' (string) e.g., [{"period": "Week 1", "action": "Add compost"}])
+- 'recommendation' (string, a short general summary of what to do)
+Do not include any markdown or explanatory text, just the raw JSON.`;
+
+        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { response_mime_type: "application/json" }
+            })
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok) {
+            console.error('Gemini API Error:', result);
+            return res.status(500).json({ success: false, error: result.error?.message || 'Failed to generate report' });
+        }
+
+        const aiResponseText = result.candidates[0].content.parts[0].text;
+        
+        try {
+            const parsedData = JSON.parse(aiResponseText);
+            return res.json({ success: true, data: parsedData });
+        } catch (parseError) {
+            console.error('Failed to parse AI response:', aiResponseText);
+            const jsonMatch = aiResponseText.match(/{[\s\S]*}/);
+            if (jsonMatch) {
+                try {
+                    const extractedData = JSON.parse(jsonMatch[0]);
+                    return res.json({ success: true, data: extractedData });
+                } catch (e) {
+                    return res.status(500).json({ success: false, error: 'Invalid format received from AI' });
+                }
+            }
+            return res.status(500).json({ success: false, error: 'Invalid format received from AI' });
+        }
+    } catch (error) {
+        console.error('Soil Report API Error:', error);
+        res.status(500).json({ success: false, error: 'Internal Server Error' });
+    }
+};

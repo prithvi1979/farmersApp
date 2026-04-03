@@ -72,6 +72,14 @@ export default function LanguageSelectionScreen() {
                             <Text style={styles.languageText}>English</Text>
                             <Text style={styles.languageSubText}>English</Text>
                         </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.languageCard}
+                            onPress={() => handleSelectLanguage('Assamese')}
+                        >
+                            <Text style={styles.languageText}>অসমীয়া</Text>
+                            <Text style={styles.languageSubText}>Assamese</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </View>
