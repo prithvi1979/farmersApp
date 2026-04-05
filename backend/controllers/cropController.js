@@ -348,3 +348,32 @@ exports.getActiveCropById = async (req, res) => {
     res.status(500).json({ success: false, error: 'Server error fetching crop details' });
   }
 };
+
+exports.saveTaskNote = async (req, res) => {
+  try {
+    const { activeCropId, phaseId, taskId, note } = req.body;
+
+    if (!activeCropId || !phaseId || !taskId) {
+        return res.status(400).json({ success: false, error: 'activeCropId, phaseId, and taskId are required' });
+    }
+
+    const activeCrop = await ActiveCrop.findById(activeCropId);
+    if (!activeCrop) return res.status(404).json({ success: false, error: 'Crop not found' });
+
+    let phase = activeCrop.phases.id(phaseId);
+    if (!phase) return res.status(404).json({ success: false, error: 'Phase not found' });
+
+    let currentTask = phase.tasks.id(taskId);
+    if (!currentTask) return res.status(404).json({ success: false, error: 'Task not found' });
+
+    currentTask.note = note || '';
+
+    await activeCrop.save();
+
+    res.status(200).json({ success: true, message: 'Note saved successfully', data: activeCrop });
+
+  } catch (error) {
+    console.error('Error saving task note:', error);
+    res.status(500).json({ success: false, error: 'Server error saving task note' });
+  }
+};

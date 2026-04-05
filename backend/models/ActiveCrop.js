@@ -14,7 +14,8 @@ const activeTaskSchema = new mongoose.Schema({
     default: 'locked' 
   },
   isCompleted: { type: Boolean, default: false },
-  completedAt: { type: Date }
+  completedAt: { type: Date },
+  note: { type: String, default: '' }
 });
 
 const activePhaseSchema = new mongoose.Schema({

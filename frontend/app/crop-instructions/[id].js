@@ -18,6 +18,46 @@ export default function CropInstructionsScreen() {
     const [clarifyResponse, setClarifyResponse] = useState('');
     const [clarifyLoading, setClarifyLoading] = useState(false);
     const [currentClarifyTask, setCurrentClarifyTask] = useState(null);
+    const [expandedNoteTaskId, setExpandedNoteTaskId] = useState(null);
+    const [noteText, setNoteText] = useState('');
+    const [noteLoading, setNoteLoading] = useState(false);
+
+    const toggleNoteSection = (task) => {
+        if (expandedNoteTaskId === task._id) {
+            setExpandedNoteTaskId(null);
+        } else {
+            setExpandedNoteTaskId(task._id);
+            setNoteText(task.note ? task.note : `add a note regarding step ${task.order}`);
+        }
+    };
+
+    const handleSaveNote = async (phaseId, taskId) => {
+        setNoteLoading(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/crops/task/note`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    activeCropId: id,
+                    phaseId: phaseId,
+                    taskId: taskId,
+                    note: noteText
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                fetchCropDetails();
+                setExpandedNoteTaskId(null);
+            } else {
+                Alert.alert('Error', data.error || 'Failed to save note.');
+            }
+        } catch (error) {
+            console.error('Save note error:', error);
+            Alert.alert('Error', 'Failed to reach server.');
+        } finally {
+            setNoteLoading(false);
+        }
+    };
 
     const openClarifyModal = (task) => {
         setCurrentClarifyTask(task);
@@ -180,16 +220,65 @@ export default function CropInstructionsScreen() {
                     </View>
                 )}
 
-                {/** Ask Clarifications Button **/}
+                {/** Optional existing note display if it exists and isn't actively edited **/}
+                {task.note && expandedNoteTaskId !== task._id && (
+                    <View style={styles.savedNoteReadonly}>
+                        <MaterialCommunityIcons name="note-text-outline" size={16} color="#795548" />
+                        <Text style={styles.savedNoteReadonlyText}>{task.note}</Text>
+                    </View>
+                )}
+
+                {/** Action Buttons Row (Clarify & Add Note) **/}
                 {!isLocked && (
-                    <TouchableOpacity 
-                        style={styles.clarifyBtn}
-                        onPress={() => openClarifyModal(task)}
-                        disabled={togglingTaskId === task._id}
-                    >
-                        <MaterialCommunityIcons name="chat-question-outline" size={20} color="#0288D1" />
-                        <Text style={styles.clarifyBtnText}>Ask Clarifications</Text>
-                    </TouchableOpacity>
+                    <View style={styles.actionRowBtnGroup}>
+                        <TouchableOpacity 
+                            style={styles.secondaryBtn}
+                            onPress={() => openClarifyModal(task)}
+                            disabled={togglingTaskId === task._id}
+                        >
+                            <MaterialCommunityIcons name="chat-question-outline" size={18} color="#0288D1" />
+                            <Text style={styles.secondaryBtnText}>Ask Clarifications</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                            style={[styles.secondaryBtn, { borderColor: '#ffa726', backgroundColor: '#fff3e0' }]}
+                            onPress={() => toggleNoteSection(task)}
+                            disabled={togglingTaskId === task._id}
+                        >
+                            <MaterialCommunityIcons name="note-edit-outline" size={18} color="#f57c00" />
+                            <Text style={[styles.secondaryBtnText, { color: '#f57c00' }]}>{task.note ? 'Edit Note' : 'Add Note'}</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {/** Inline Note Editor Section **/}
+                {expandedNoteTaskId === task._id && (
+                    <View style={styles.inlineNoteContainer}>
+                        <TextInput
+                            style={styles.inlineNoteInput}
+                            multiline
+                            value={noteText}
+                            onChangeText={setNoteText}
+                            placeholder="Add your note here..."
+                            placeholderTextColor="#999"
+                        />
+                        <View style={styles.inlineNoteActionRow}>
+                            <TouchableOpacity 
+                                style={styles.inlineNoteCancelBtn}
+                                onPress={() => setExpandedNoteTaskId(null)}
+                                disabled={noteLoading}
+                            >
+                                <Text style={styles.inlineNoteCancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={styles.inlineNoteSaveBtn}
+                                onPress={() => handleSaveNote(phaseId, task._id)}
+                                disabled={noteLoading}
+                            >
+                                {noteLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.inlineNoteSaveText}>Save</Text>}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 )}
 
                 {/** The Main Action Button **/}
@@ -418,6 +507,24 @@ const styles = StyleSheet.create({
     // Clarification Button & Modal
     clarifyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 8, marginTop: 12, backgroundColor: '#e1f5fe', borderWidth: 1, borderColor: '#81d4fa' },
     clarifyBtnText: { color: '#0288D1', fontSize: 14, fontWeight: 'bold', marginLeft: 8 },
+    
+    // Action Row for Clarify/Note
+    actionRowBtnGroup: { flexDirection: 'row', gap: 8, marginTop: 12 },
+    secondaryBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 8, backgroundColor: '#e1f5fe', borderWidth: 1, borderColor: '#81d4fa' },
+    secondaryBtnText: { color: '#0288D1', fontSize: 13, fontWeight: 'bold', marginLeft: 6 },
+    
+    // Inline Note Styles
+    inlineNoteContainer: { marginTop: 12, backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#ffa726', padding: 12 },
+    inlineNoteInput: { backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, fontSize: 14, minHeight: 80, textAlignVertical: 'top', color: '#333' },
+    inlineNoteActionRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12, gap: 12 },
+    inlineNoteCancelBtn: { paddingVertical: 8, paddingHorizontal: 16 },
+    inlineNoteCancelText: { color: '#757575', fontWeight: 'bold' },
+    inlineNoteSaveBtn: { backgroundColor: '#f57c00', paddingVertical: 8, paddingHorizontal: 20, borderRadius: 6, minWidth: 80, alignItems: 'center' },
+    inlineNoteSaveText: { color: '#fff', fontWeight: 'bold' },
+    savedNoteReadonly: { marginTop: 8, padding: 12, backgroundColor: '#efebe9', borderRadius: 8, borderWidth: 1, borderColor: '#d7ccc8', flexDirection: 'row', alignItems: 'center' },
+    savedNoteReadonlyText: { marginLeft: 8, fontSize: 14, color: '#5d4037', flex: 1 },
+
+    // Modal
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
     modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: Platform.OS === 'ios' ? 40 : 20, maxHeight: '80%' },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
