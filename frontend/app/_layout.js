@@ -1,16 +1,19 @@
 import { Stack } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
+import { LanguageProvider } from '../context/LanguageContext';
 
 export default function RootLayout() {
     return (
-        <View style={styles.container}>
-            <Stack
-                screenOptions={{
-                    headerShown: false,
-                    contentStyle: { backgroundColor: 'transparent' },
-                }}
-            />
-        </View>
+        <LanguageProvider>
+            <View style={styles.container}>
+                <Stack
+                    screenOptions={{
+                        headerShown: false,
+                        contentStyle: { backgroundColor: 'transparent' },
+                    }}
+                />
+            </View>
+        </LanguageProvider>
     );
 }
 

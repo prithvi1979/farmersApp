@@ -7,6 +7,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Picker } from '@react-native-picker/picker';
+import { useLanguage } from '../../context/LanguageContext';
 
 const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 
@@ -42,6 +44,7 @@ const getPersonaIcon = (persona = '') => {
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { language, switchLanguage, t } = useLanguage();
   const [authUser, setAuthUser] = useState(null);   // OAuth profile (name, photo, email)
   const [onboardData, setOnboardData] = useState(null); // chosenPlants, persona from backend
   const [loading, setLoading] = useState(true);
@@ -111,7 +114,27 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile</Text>
+          <Text style={styles.headerTitle}>{t('profile')}</Text>
+        </View>
+
+        {/* ── LANGUAGE SWITCHER ── */}
+        <View style={styles.languageCard}>
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                <MaterialCommunityIcons name="translate" size={24} color="#00C853" style={{marginRight: 10}} />
+                <Text style={styles.languageTitle}>{t('language')}</Text>
+            </View>
+            <View style={styles.pickerContainer}>
+                <Picker
+                    selectedValue={language}
+                    onValueChange={(itemValue) => switchLanguage(itemValue)}
+                    style={styles.picker}
+                >
+                    <Picker.Item label="English" value="en" />
+                    <Picker.Item label="বাংলা (Bengali)" value="bn" />
+                    <Picker.Item label="অসমীয়া (Assamese)" value="as" />
+                    <Picker.Item label="हिन्दी (Hindi)" value="hi" />
+                </Picker>
+            </View>
         </View>
 
         {authUser ? (
@@ -139,11 +162,11 @@ export default function ProfileScreen() {
             <View style={styles.profileActions}>
               <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/auth/profile-setup')}>
                 <MaterialCommunityIcons name="account-edit-outline" size={16} color="#00C853" />
-                <Text style={styles.editBtnText}>Edit Profile</Text>
+                <Text style={styles.editBtnText}>{t('editProfile')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
                 <MaterialCommunityIcons name="logout" size={16} color="#d32f2f" />
-                <Text style={styles.signOutBtnText}>Sign Out</Text>
+                <Text style={styles.signOutBtnText}>{t('signOut')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -153,29 +176,29 @@ export default function ProfileScreen() {
             <View style={styles.guestIcon}>
               <MaterialCommunityIcons name="account-circle-outline" size={60} color="#ccc" />
             </View>
-            <Text style={styles.guestTitle}>You're browsing as a guest</Text>
+            <Text style={styles.guestTitle}>{t('browsingAsGuest')}</Text>
             <Text style={styles.guestDesc}>
-              Sign in to save your farm data and sync across devices.
+              {t('signInToSave')}
             </Text>
             <TouchableOpacity style={styles.createAccountBtn} onPress={() => router.push('/auth/create-account')}>
               <MaterialCommunityIcons name="account-plus-outline" size={20} color="#fff" style={{ marginRight: 10 }} />
-              <Text style={styles.createAccountBtnText}>Create Account</Text>
+              <Text style={styles.createAccountBtnText}>{t('createAccount')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.loginBtn} onPress={() => router.push('/auth/login-pin')}>
               <MaterialCommunityIcons name="login" size={20} color="#00C853" style={{ marginRight: 10 }} />
-              <Text style={styles.loginBtnText}>Already have an account? Log In</Text>
+              <Text style={styles.loginBtnText}>{t('alreadyHaveAccount')}</Text>
             </TouchableOpacity>
 
             <View style={{flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 16}}>
               <View style={{flex: 1, height: 1, backgroundColor: '#e0e0e0'}} />
-              <Text style={{marginHorizontal: 12, color: '#888', fontSize: 12}}>OR</Text>
+              <Text style={{marginHorizontal: 12, color: '#888', fontSize: 12}}>{t('or')}</Text>
               <View style={{flex: 1, height: 1, backgroundColor: '#e0e0e0'}} />
             </View>
 
             <TouchableOpacity style={styles.googleBtn} onPress={() => router.push('/auth/sign-in')}>
               <MaterialCommunityIcons name="google" size={20} color="#EA4335" style={{ marginRight: 10 }} />
-              <Text style={styles.googleBtnText}>Continue with Google</Text>
+              <Text style={styles.googleBtnText}>{t('continueWithGoogle')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -183,7 +206,7 @@ export default function ProfileScreen() {
         {/* ── PREFERRED CROPS ── */}
         {chosenPlants.length > 0 && (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Your Preferred Crops</Text>
+            <Text style={styles.cardTitle}>{t('yourPreferredCrops')}</Text>
             <View style={styles.cropsGrid}>
               {chosenPlants.map((plant, i) => (
                 <View key={i} style={styles.cropItem}>
@@ -209,16 +232,16 @@ export default function ProfileScreen() {
                 <MaterialCommunityIcons name={getPersonaIcon(persona)} size={28} color="#fff" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.personaLabel}>You are a</Text>
+                <Text style={styles.personaLabel}>{t('youAreA')}</Text>
                 <Text style={styles.personaTitle}>{persona}</Text>
               </View>
             </View>
             <Text style={styles.personaDesc}>
-              Ready to grow? Track your crops phase by phase and get AI-powered instructions from seed to harvest.
+              {t('readyToGrow')}
             </Text>
             <TouchableOpacity style={styles.startCropBtn} onPress={() => router.push('/start-crop')}>
               <MaterialCommunityIcons name="seed-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-              <Text style={styles.startCropBtnText}>Start a Crop</Text>
+              <Text style={styles.startCropBtnText}>{t('startCrop')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -335,5 +358,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#00C853', borderRadius: 12, paddingVertical: 14
   },
-  startCropBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+  startCropBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+
+  // Language Card
+  languageCard: {
+    backgroundColor: '#fff', borderRadius: 20, padding: 20,
+    marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06, shadowRadius: 8, elevation: 3
+  },
+  languageTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
+  pickerContainer: {
+    marginTop: 12,
+    borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 12,
+    backgroundColor: '#fafafa', overflow: 'hidden'
+  },
+  picker: { width: '100%', height: 50 }
 });
