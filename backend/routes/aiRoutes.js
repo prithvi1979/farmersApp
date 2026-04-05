@@ -22,4 +22,9 @@ router.post('/mandi-price', aiController.getMandiPrice);
 // @access  Public
 router.post('/soil-report', aiController.generateSoilReport);
 
+// @route   POST /api/ai/clarify
+// @desc    Ask a clarification question using Cerebras AI
+// @access  Public
+router.post('/clarify', aiController.askClarification);
+
 module.exports = router;

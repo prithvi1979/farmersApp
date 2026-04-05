@@ -137,8 +137,8 @@ export default function SoilTestScreen() {
                     <View style={styles.cardInfo}>
                         <Text style={styles.testTitle}>🌡️ pH Test (No kit method)</Text>
                         <Text style={styles.testInstruction}>1. Take a small soil sample in two separate cups.</Text>
-                        <Text style={styles.testInstruction}>2. Add Vinegar to Cup A: If it fizzes, your soil is ALKALINE (High pH > 7).</Text>
-                        <Text style={styles.testInstruction}>3. Add Baking Soda + Water to Cup B: If it fizzes, your soil is ACIDIC (Low pH < 7).</Text>
+                        <Text style={styles.testInstruction}>2. Add Vinegar to Cup A: If it fizzes, your soil is ALKALINE (High pH {'>'} 7).</Text>
+                        <Text style={styles.testInstruction}>3. Add Baking Soda + Water to Cup B: If it fizzes, your soil is ACIDIC (Low pH {'<'} 7).</Text>
                         <Text style={styles.testInstruction}>4. If neither fizzes heavily, your soil is NEUTRAL (~6.5 - 7.0).</Text>
                         
                         <View style={styles.divider} />

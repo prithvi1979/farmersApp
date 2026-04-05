@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator, Platform, StatusBar, Alert, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator, Platform, StatusBar, Alert, useWindowDimensions, Modal, TextInput } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import RenderHtml from 'react-native-render-html';
@@ -13,6 +13,47 @@ export default function CropInstructionsScreen() {
     const [crop, setCrop] = useState(null);
     const [loading, setLoading] = useState(true);
     const [togglingTaskId, setTogglingTaskId] = useState(null);
+    const [isClarifyModalVisible, setIsClarifyModalVisible] = useState(false);
+    const [clarifyQuestion, setClarifyQuestion] = useState('');
+    const [clarifyResponse, setClarifyResponse] = useState('');
+    const [clarifyLoading, setClarifyLoading] = useState(false);
+    const [currentClarifyTask, setCurrentClarifyTask] = useState(null);
+
+    const openClarifyModal = (task) => {
+        setCurrentClarifyTask(task);
+        setClarifyQuestion('');
+        setClarifyResponse('');
+        setIsClarifyModalVisible(true);
+    };
+
+    const handleAskClarification = async () => {
+        if (!clarifyQuestion.trim() || !currentClarifyTask) return;
+        setClarifyLoading(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/ai/clarify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    question: clarifyQuestion,
+                    context: {
+                        title: currentClarifyTask.title,
+                        description: currentClarifyTask.description
+                    }
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                setClarifyResponse(data.response);
+            } else {
+                Alert.alert('Error', data.error || 'Failed to get clarification.');
+            }
+        } catch (error) {
+            console.error('Clarification error:', error);
+            Alert.alert('Error', 'Failed to reach AI service.');
+        } finally {
+            setClarifyLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (id) {
@@ -139,6 +180,18 @@ export default function CropInstructionsScreen() {
                     </View>
                 )}
 
+                {/** Ask Clarifications Button **/}
+                {!isLocked && (
+                    <TouchableOpacity 
+                        style={styles.clarifyBtn}
+                        onPress={() => openClarifyModal(task)}
+                        disabled={togglingTaskId === task._id}
+                    >
+                        <MaterialCommunityIcons name="chat-question-outline" size={20} color="#0288D1" />
+                        <Text style={styles.clarifyBtnText}>Ask Clarifications</Text>
+                    </TouchableOpacity>
+                )}
+
                 {/** The Main Action Button **/}
                 <TouchableOpacity 
                     style={[
@@ -247,6 +300,54 @@ export default function CropInstructionsScreen() {
                 })}
                 <View style={{height: 40}} />
             </ScrollView>
+
+            {/* Clarification Modal */}
+            <Modal
+                visible={isClarifyModalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setIsClarifyModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Ask Clarifications</Text>
+                            <TouchableOpacity onPress={() => setIsClarifyModalVisible(false)}>
+                                <MaterialCommunityIcons name="close" size={24} color="#333" />
+                            </TouchableOpacity>
+                        </View>
+                        {currentClarifyTask && (
+                            <Text style={styles.modalSubtitle} numberOfLines={1}>
+                                Context: {currentClarifyTask.title}
+                            </Text>
+                        )}
+                        <TextInput
+                            style={styles.modalInput}
+                            placeholder="What do you want to ask?"
+                            placeholderTextColor="#999"
+                            value={clarifyQuestion}
+                            onChangeText={setClarifyQuestion}
+                            multiline
+                        />
+                        <TouchableOpacity 
+                            style={styles.modalSubmitBtn} 
+                            onPress={handleAskClarification}
+                            disabled={clarifyLoading || !clarifyQuestion.trim()}
+                        >
+                            {clarifyLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.modalSubmitBtnText}>Submit Question</Text>}
+                        </TouchableOpacity>
+                        
+                        {clarifyResponse ? (
+                            <View style={styles.modalResponseContainer}>
+                                <Text style={styles.modalResponseLabel}>Answer:</Text>
+                                <ScrollView style={{maxHeight: 200}}>
+                                    <Text style={styles.modalResponseText}>{clarifyResponse}</Text>
+                                </ScrollView>
+                            </View>
+                        ) : null}
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -312,5 +413,20 @@ const styles = StyleSheet.create({
     
     actionBtnText: { color: '#fff', fontSize: 15, fontWeight: 'bold', marginLeft: 8 },
     actionBtnTextCompleted: { color: '#4CAF50' },
-    actionBtnTextLocked: { color: '#9e9e9e' }
+    actionBtnTextLocked: { color: '#9e9e9e' },
+    
+    // Clarification Button & Modal
+    clarifyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 8, marginTop: 12, backgroundColor: '#e1f5fe', borderWidth: 1, borderColor: '#81d4fa' },
+    clarifyBtnText: { color: '#0288D1', fontSize: 14, fontWeight: 'bold', marginLeft: 8 },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+    modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: Platform.OS === 'ios' ? 40 : 20, maxHeight: '80%' },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#111' },
+    modalSubtitle: { fontSize: 13, color: '#666', marginBottom: 16 },
+    modalInput: { backgroundColor: '#f5f5f5', borderRadius: 12, padding: 16, fontSize: 15, color: '#333', minHeight: 100, textAlignVertical: 'top', marginBottom: 16 },
+    modalSubmitBtn: { backgroundColor: '#0288D1', paddingVertical: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    modalSubmitBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+    modalResponseContainer: { marginTop: 20, backgroundColor: '#f1f8e9', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#c5e1a5' },
+    modalResponseLabel: { fontSize: 14, fontWeight: 'bold', color: '#33691e', marginBottom: 8 },
+    modalResponseText: { fontSize: 14, color: '#333', lineHeight: 22 }
 });

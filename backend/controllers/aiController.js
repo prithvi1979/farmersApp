@@ -271,3 +271,55 @@ Do not include any markdown or explanatory text, just the raw JSON.`;
         res.status(500).json({ success: false, error: 'Internal Server Error' });
     }
 };
+
+exports.askClarification = async (req, res) => {
+    try {
+        const { question, context } = req.body;
+        if (!question || !context) {
+            return res.status(400).json({ success: false, error: 'Question and context are required' });
+        }
+
+        const apiKey = process.env.CEREBRAS_API_KEY;
+        if (!apiKey) {
+            return res.status(500).json({ success: false, error: 'CEREBRAS_API_KEY is not configured' });
+        }
+
+        const systemPrompt = `You are an expert agronomist providing clarification to a farmer based on a specific cultivation task.
+The task context is: 
+Title: ${context.title}
+Description: ${context.description}
+
+Answer the farmer's question precisely using plain text. Do not use markdown unless absolutely necessary. Keep it under 3 paragraphs.`;
+
+        const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'llama3.1-8b',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: question }
+                ],
+                max_completion_tokens: 400,
+                temperature: 0.7
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error('Cerebras API Error:', data);
+            return res.status(500).json({ success: false, error: data.error?.message || 'Failed to get clarification from Cerebras AI' });
+        }
+
+        const aiMessage = data.choices[0].message.content;
+        return res.json({ success: true, response: aiMessage });
+
+    } catch (error) {
+        console.error('Ask Clarification Error:', error);
+        res.status(500).json({ success: false, error: 'Internal Server Error' });
+    }
+};
