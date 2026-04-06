@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Tex
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
+import { useLanguage } from '../context/LanguageContext';
 
 const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 
 export default function MandiCheckerScreen() {
     const router = useRouter();
+    const { t } = useLanguage();
 
     // Auto-suggest fields
     const [searchQuery, setSearchQuery] = useState('');
@@ -119,7 +121,7 @@ export default function MandiCheckerScreen() {
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <MaterialCommunityIcons name="arrow-left" size={24} color="#111" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Mandi Price Checker</Text>
+                <Text style={styles.headerTitle}>{t('mandiPriceChecker')}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -129,16 +131,16 @@ export default function MandiCheckerScreen() {
                         <View style={styles.iconBg}>
                             <MaterialCommunityIcons name="currency-inr" size={32} color="#00C853" />
                         </View>
-                        <Text style={styles.cardTitle}>Live AI Spot Pricing</Text>
-                        <Text style={styles.cardSub}>Powered by Gemini Internet Grounding</Text>
+                        <Text style={styles.cardTitle}>{t('liveAiPricing')}</Text>
+                        <Text style={styles.cardSub}>{t('poweredByGemini')}</Text>
                     </View>
 
-                    <Text style={styles.label}>Crop Name</Text>
+                    <Text style={styles.label}>{t('cropName')}</Text>
                     <View style={styles.searchContainer}>
                         <MaterialCommunityIcons name="magnify" size={20} color="#888" style={styles.searchIcon} />
                         <TextInput
                             style={styles.searchInput}
-                            placeholder="Type a crop..."
+                            placeholder={t('typeCrop')}
                             value={searchQuery}
                             onChangeText={handleSearchChange}
                             onFocus={() => { if(searchQuery) setShowSuggestions(true); }}
@@ -184,12 +186,12 @@ export default function MandiCheckerScreen() {
                         {loadingResult ? (
                             <View style={styles.buttonContentRow}>
                                 <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
-                                <Text style={styles.submitButtonText}>Analyzing Web Data...</Text>
+                                <Text style={styles.submitButtonText}>{t('analyzingWeb')}</Text>
                             </View>
                         ) : (
                             <View style={styles.buttonContentRow}>
                                 <MaterialCommunityIcons name="map-marker-radius" size={20} color="#fff" style={{ marginRight: 8 }} />
-                                <Text style={styles.submitButtonText}>Check Price</Text>
+                                <Text style={styles.submitButtonText}>{t('checkPrice')}</Text>
                             </View>
                         )}
                     </TouchableOpacity>
@@ -199,23 +201,23 @@ export default function MandiCheckerScreen() {
                     <View style={styles.resultCard}>
                         <View style={styles.resultHeader}>
                             <MaterialCommunityIcons name="check-decagram" size={24} color="#00C853" />
-                            <Text style={styles.resultTitle}>Data Analyzed</Text>
+                            <Text style={styles.resultTitle}>{t('dataAnalyzed')}</Text>
                         </View>
                         
                         <View style={styles.dataRow}>
-                            <Text style={styles.dataLabel}>Nearest Market:</Text>
+                            <Text style={styles.dataLabel}>{t('nearestMarket')}</Text>
                             <Text style={styles.dataValue}>{mandiResult.mandiName}</Text>
                         </View>
                         <View style={styles.dataRow}>
-                            <Text style={styles.dataLabel}>Spot Price:</Text>
+                            <Text style={styles.dataLabel}>{t('spotPrice')}</Text>
                             <Text style={styles.priceHighlight}>{mandiResult.price}</Text>
                         </View>
                         <View style={styles.dataRow}>
-                            <Text style={styles.dataLabel}>Verified On:</Text>
+                            <Text style={styles.dataLabel}>{t('verifiedOn')}</Text>
                             <Text style={styles.dataValue}>{mandiResult.date}</Text>
                         </View>
 
-                        <Text style={styles.disclaimerText}>Result sourced live via Google Search Grounding.</Text>
+                        <Text style={styles.disclaimerText}>{t('resultSourced')}</Text>
                     </View>
                 )}
 

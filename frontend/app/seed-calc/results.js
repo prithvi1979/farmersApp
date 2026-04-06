@@ -44,8 +44,26 @@ export default function SeedResultsScreen() {
     const totalBagsRaw = requiredSeedKg / 50;
     const totalBags = Math.ceil(totalBagsRaw); // Always round up so farmer doesn't run short
 
-    // Formatting helper
-    const formatNumber = (num) => Number.isInteger(num) ? num.toString() : num.toFixed(1);
+    // Smart formatting helpers
+    // For seed: if < 1 kg, show in grams; otherwise show up to 3 significant decimal places
+    const formatSeedKg = (kg) => {
+        if (kg <= 0) return { value: '0', unit: 'kg' };
+        if (kg < 1) {
+            const grams = kg * 1000;
+            return { value: grams % 1 === 0 ? grams.toString() : grams.toFixed(1), unit: 'g' };
+        }
+        // For kg: show 2 decimal places, strip trailing zeros
+        return { value: parseFloat(kg.toFixed(2)).toString(), unit: 'kg' };
+    };
+
+    const formatArea = (ha) => {
+        if (ha === 0) return '0';
+        if (ha < 0.01) return ha.toFixed(4);
+        if (ha < 1) return ha.toFixed(3);
+        return parseFloat(ha.toFixed(2)).toString();
+    };
+
+    const seedDisplay = formatSeedKg(requiredSeedKg);
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -82,11 +100,12 @@ export default function SeedResultsScreen() {
                     <Text style={styles.heroTitle}>Seed Required</Text>
                     <View style={styles.heroResultRow}>
                         <MaterialCommunityIcons name="seed" size={40} color="#00C853" style={styles.heroIcon} />
-                        <Text style={styles.heroNumber}>{formatNumber(requiredSeedKg)}</Text>
-                        <Text style={styles.heroUnit}>kg</Text>
+                        <Text style={styles.heroNumber}>{seedDisplay.value}</Text>
+                        <Text style={styles.heroUnit}>{seedDisplay.unit}</Text>
                     </View>
                     <Text style={styles.heroSubText}>
-                        That's for <Text style={{ fontWeight: 'bold', color: '#111' }}>{formatNumber(areaInHectares)} Hectares</Text> total.
+                        That's for <Text style={{ fontWeight: 'bold', color: '#111' }}>{formatArea(areaInHectares)} Hectares</Text> total.
+                        {seedDisplay.unit === 'g' ? `  (${requiredSeedKg.toFixed(4)} kg)` : ''}
                     </Text>
                 </View>
 

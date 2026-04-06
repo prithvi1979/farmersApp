@@ -3,13 +3,15 @@ import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, Flat
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '../context/LanguageContext';
 
 const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 
 export default function AssistantScreen() {
     const router = useRouter();
+    const { t } = useLanguage();
     const [messages, setMessages] = useState([
-        { id: '1', text: "Hello! I'm your AgriGrow AI assistant. How can I help your farm today?", sender: 'ai' }
+        { id: '1', text: t('aiGreeting'), sender: 'ai' }
     ]);
     const [inputText, setInputText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -82,7 +84,7 @@ export default function AssistantScreen() {
                 </TouchableOpacity>
                 <View style={styles.headerTitleContainer}>
                     <MaterialCommunityIcons name="robot-outline" size={24} color="#00C853" />
-                    <Text style={styles.headerTitle}>AgriGrow Assistant</Text>
+                    <Text style={styles.headerTitle}>{t('agrigrowAssistant')}</Text>
                 </View>
                 <View style={{ width: 24 }} />
             </View>
@@ -102,7 +104,7 @@ export default function AssistantScreen() {
                 <View style={styles.inputContainer}>
                     <TextInput
                         style={styles.textInput}
-                        placeholder="Ask about your crops..."
+                        placeholder={t('askAboutCrops')}
                         value={inputText}
                         onChangeText={setInputText}
                         editable={!isLoading && !!deviceId}

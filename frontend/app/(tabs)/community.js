@@ -4,11 +4,13 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import HeaderDropdown from '../../components/HeaderDropdown';
+import { useLanguage } from '../../context/LanguageContext';
 
 const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 
 export default function CommunityScreen() {
     const router = useRouter();
+    const { t } = useLanguage();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -41,7 +43,7 @@ export default function CommunityScreen() {
                     <View style={styles.logoIconBg}>
                         <MaterialCommunityIcons name="account-group" size={30} color="#fff" />
                     </View>
-                    <Text style={styles.logoText}>Community</Text>
+                    <Text style={styles.logoText}>{t('community')}</Text>
                 </View>
                 <HeaderDropdown />
             </View>
@@ -52,16 +54,16 @@ export default function CommunityScreen() {
                     <MaterialCommunityIcons name="magnify" size={24} color="#888" style={styles.searchIcon} />
                     <TextInput
                         style={styles.searchInput}
-                        placeholder="Search in community..."
+                        placeholder={t('searchInCommunity')}
                         placeholderTextColor="#888"
                     />
                 </View>
 
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Recent Discussions</Text>
+                    <Text style={styles.sectionTitle}>{t('recentDiscussions')}</Text>
                     <TouchableOpacity style={styles.askButton} onPress={() => router.push('/community/ask')}>
                         <MaterialCommunityIcons name="pencil-plus" size={20} color="#fff" />
-                        <Text style={styles.askButtonText}>ASK</Text>
+                        <Text style={styles.askButtonText}>{t('ask')}</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -70,7 +72,7 @@ export default function CommunityScreen() {
                 ) : posts.length === 0 ? (
                     <View style={styles.emptyState}>
                         <MaterialCommunityIcons name="comment-text-multiple-outline" size={48} color="#ccc" />
-                        <Text style={styles.emptyText}>No discussions yet. Be the first to ask!</Text>
+                        <Text style={styles.emptyText}>{t('noDiscussions')}</Text>
                     </View>
                 ) : (
                     posts.map((post) => (

@@ -12,37 +12,68 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import CropAutofillInput from '../../components/CropAutofillInput';
 
-// Accurate Crop Water Database (Seasonal mm)
-const CROPS = [
-    { id: 'rice', name: 'Rice', icon: 'rice', water_mm: 1200 },
-    { id: 'wheat', name: 'Wheat', icon: 'barley', water_mm: 500 },
-    { id: 'maize', name: 'Maize', icon: 'corn', water_mm: 600 },
-    { id: 'cotton', name: 'Cotton', icon: 'cannabis', water_mm: 900 },
-    { id: 'tomato', name: 'Tomato', icon: 'food-apple', water_mm: 500 },
-    { id: 'potato', name: 'Potato', icon: 'food-croissant', water_mm: 600 },
-    { id: 'onion', name: 'Onion', icon: 'onion', water_mm: 450 },
-];
+// Seasonal water requirement defaults (mm) per crop.
+// Any unlisted crop gets GENERIC_WATER_MM.
+const WATER_DEFAULTS = {
+    rice:        1200,
+    wheat:       500,
+    maize:       600,
+    corn:        600,
+    cotton:      900,
+    tomato:      500,
+    potato:      600,
+    onion:       450,
+    sugarcane:   1800,
+    soybean:     450,
+    groundnut:   550,
+    mustard:     350,
+    sunflower:   600,
+    chickpea:    350,
+    barley:      400,
+    sorghum:     500,
+    jute:        800,
+    banana:      1400,
+    mango:       1100,
+    guava:       900,
+    papaya:      1200,
+    chilli:      700,
+    capsicum:    700,
+    brinjal:     600,
+    cabbage:     380,
+    cauliflower: 400,
+    okra:        600,
+    cucumber:    500,
+    watermelon:  600,
+    carrot:      450,
+    garlic:      350,
+    ginger:      1500,
+    turmeric:    1500,
+    tea:         1600,
+    coffee:      1200,
+};
+const GENERIC_WATER_MM = 500;
 
 const AREA_UNITS = ['Acre', 'Hectare', 'Sq Meter'];
 const IRRIGATION_METHODS = [
-    { id: 'flood', name: 'Flood', factor: 1.0 },
+    { id: 'flood',     name: 'Flood',     factor: 1.0 },
     { id: 'sprinkler', name: 'Sprinkler', factor: 0.75 },
-    { id: 'drip', name: 'Drip', factor: 0.5 },
+    { id: 'drip',      name: 'Drip',      factor: 0.5 },
 ];
 
 export default function IrrigationCalculatorScreen() {
     const router = useRouter();
 
     // Form State
-    const [selectedCrop, setSelectedCrop] = useState(CROPS[0]);
+    const [selectedCrop, setSelectedCrop] = useState(null); // { name }
 
     // Field Area
     const [fieldArea, setFieldArea] = useState('1');
     const [areaUnit, setAreaUnit] = useState('Hectare');
 
-    // Water requirement depth (mm)
-    const [waterReq, setWaterReq] = useState(CROPS[0].water_mm.toString());
+    // Water requirement depth (mm) — auto-filled on crop select, editable
+    const [waterReq, setWaterReq] = useState('');
 
     // Irrigation Method
     const [selectedMethod, setSelectedMethod] = useState(IRRIGATION_METHODS[0]);
@@ -50,14 +81,20 @@ export default function IrrigationCalculatorScreen() {
     // Pump Flow Rate (L/hr)
     const [pumpRate, setPumpRate] = useState('20000');
 
-    // Update water req when a new crop is selected
     const handleCropSelect = (crop) => {
         setSelectedCrop(crop);
-        setWaterReq(crop.water_mm.toString());
+        const key = crop.name.toLowerCase().replace(/[^a-z]/g, '_').replace(/_+/g, '_');
+        const mm = WATER_DEFAULTS[key] || WATER_DEFAULTS[crop.name.toLowerCase()] || GENERIC_WATER_MM;
+        setWaterReq(mm.toString());
+    };
+
+    const handleCropClear = () => {
+        setSelectedCrop(null);
+        setWaterReq('');
     };
 
     const handleCalculate = () => {
-        if (!fieldArea || !waterReq || !pumpRate) return;
+        if (!fieldArea || !waterReq || !pumpRate || !selectedCrop) return;
 
         router.push({
             pathname: '/irrigation-calc/results',
@@ -88,26 +125,13 @@ export default function IrrigationCalculatorScreen() {
                 {/* 1. Crop Selection */}
                 <View style={[styles.section, styles.card]}>
                     <Text style={styles.sectionTitle}>1. Target Crop</Text>
-                    <View style={styles.cropGrid}>
-                        {CROPS.map((crop) => (
-                            <TouchableOpacity
-                                key={crop.id}
-                                style={[styles.cropCard, selectedCrop.id === crop.id && styles.cropCardActive]}
-                                onPress={() => handleCropSelect(crop)}
-                            >
-                                <View style={[styles.iconBg, selectedCrop.id === crop.id && styles.iconBgActive]}>
-                                    <MaterialCommunityIcons
-                                        name={crop.icon}
-                                        size={28}
-                                        color={selectedCrop.id === crop.id ? "#fff" : "#0288D1"}
-                                    />
-                                </View>
-                                <Text style={[styles.cropText, selectedCrop.id === crop.id && styles.cropTextActive]}>
-                                    {crop.name}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
+                    <CropAutofillInput
+                        placeholder="Type to search e.g. Rice"
+                        accentColor="#0288D1"
+                        onSelect={handleCropSelect}
+                        onCustom={(name) => handleCropSelect({ _id: null, name })}
+                        onClear={handleCropClear}
+                    />
                 </View>
 
                 {/* 2. Field Area */}
@@ -146,7 +170,10 @@ export default function IrrigationCalculatorScreen() {
                 <View style={[styles.section, styles.card]}>
                     <Text style={styles.sectionTitle}>3. Water Requirement Depth</Text>
                     <Text style={styles.helperText}>
-                        Default depth needed per cycle for <Text style={{ fontWeight: 'bold', color: '#111' }}>{selectedCrop.name}</Text>. You can adjust this based on local soil moisture.
+                        {selectedCrop
+                            ? <>Default depth needed per cycle for <Text style={{ fontWeight: 'bold', color: '#111' }}>{selectedCrop.name}</Text>. You can adjust based on local soil moisture.</>
+                            : 'Select a crop above to auto-fill the seasonal water requirement. You can edit it manually.'
+                        }
                     </Text>
 
                     <View style={styles.rateInputContainer}>
@@ -186,9 +213,9 @@ export default function IrrigationCalculatorScreen() {
 
                 {/* Calculate Button */}
                 <TouchableOpacity
-                    style={[styles.calculateButton, (!fieldArea || !waterReq || !pumpRate) && styles.calculateButtonDisabled]}
+                    style={[styles.calculateButton, (!fieldArea || !waterReq || !pumpRate || !selectedCrop) && styles.calculateButtonDisabled]}
                     onPress={handleCalculate}
-                    disabled={!fieldArea || !waterReq || !pumpRate}
+                    disabled={!fieldArea || !waterReq || !pumpRate || !selectedCrop}
                 >
                     <Text style={styles.calculateButtonText}>Calculate Runtime</Text>
                     <MaterialCommunityIcons name="water-pump" size={24} color="#fff" style={{ marginLeft: 8 }} />

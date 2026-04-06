@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, Acti
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '../../context/LanguageContext';
 
 const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 
 export default function LoginPinScreen() {
     const router = useRouter();
+    const { t } = useLanguage();
 
     const [identifier, setIdentifier] = useState('');
     const [pin, setPin] = useState('');
@@ -66,24 +68,24 @@ export default function LoginPinScreen() {
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <MaterialCommunityIcons name="arrow-left" size={24} color="#111" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Account Login</Text>
+                <Text style={styles.headerTitle}>{t('accountLogin')}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
             <View style={styles.container}>
                 <View style={styles.iconContainer}>
                     <MaterialCommunityIcons name="shield-account" size={64} color="#00C853" />
-                    <Text style={styles.title}>Welcome Back</Text>
-                    <Text style={styles.subtitle}>Log in securely with your credentials</Text>
+                    <Text style={styles.title}>{t('welcomeBack')}</Text>
+                    <Text style={styles.subtitle}>{t('loginSubtitle')}</Text>
                 </View>
 
                 <View style={styles.formCard}>
-                    <Text style={styles.label}>Registered Phone Number or Name</Text>
+                    <Text style={styles.label}>{t('phoneOrName')}</Text>
                     <View style={styles.inputContainer}>
                         <MaterialCommunityIcons name="account-search-outline" size={20} color="#888" style={styles.inputIcon} />
                         <TextInput
                             style={styles.input}
-                            placeholder="e.g. Ramesh Kumar or 9876543210"
+                            placeholder={t('phoneOrNamePlaceholder')}
                             value={identifier}
                             onChangeText={setIdentifier}
                             autoCapitalize="words"
@@ -91,7 +93,7 @@ export default function LoginPinScreen() {
                         />
                     </View>
 
-                    <Text style={styles.label}>Enter your 4-Digit PIN</Text>
+                    <Text style={styles.label}>{t('enter4DigitPin')}</Text>
                     <View style={styles.inputContainer}>
                         <MaterialCommunityIcons name="lock-outline" size={20} color="#888" style={styles.inputIcon} />
                         <TextInput
@@ -115,7 +117,7 @@ export default function LoginPinScreen() {
                     {submitting ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
-                        <Text style={styles.submitButtonText}>Secure Login</Text>
+                        <Text style={styles.submitButtonText}>{t('secureLogin')}</Text>
                     )}
                 </TouchableOpacity>
             </View>

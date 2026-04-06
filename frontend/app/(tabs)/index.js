@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import Constants from 'expo-constants';
 import HeaderDropdown from '../../components/HeaderDropdown';
+import { useLanguage } from '../../context/LanguageContext';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -27,6 +28,7 @@ const LIBRARY_CATEGORY_COLORS = {
 
 export default function HomeScreen() {
     const router = useRouter();
+    const { t } = useLanguage();
 
     const [weather, setWeather] = useState(null);
     const [weatherLoading, setWeatherLoading] = useState(true);
@@ -342,8 +344,8 @@ export default function HomeScreen() {
                             <MaterialCommunityIcons name="robot" size={26} color="#fff" />
                         </View>
                         <View>
-                            <Text style={styles.assistantBannerTitle}>AI Agronomy Assistant</Text>
-                            <Text style={styles.assistantBannerSub}>Ask anything about your crops</Text>
+                            <Text style={styles.assistantBannerTitle}>{t('aiAssistantTitle')}</Text>
+                            <Text style={styles.assistantBannerSub}>{t('aiAssistantSub')}</Text>
                         </View>
                     </View>
                     <View style={styles.assistantBannerArrow}>
@@ -361,7 +363,7 @@ export default function HomeScreen() {
                         <View style={styles.toolIconContainer}>
                             <MaterialCommunityIcons name="seed" size={24} color="#00C853" />
                         </View>
-                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>SEED CALC</Text>
+                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>{t('seedCalc')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.toolCard}
@@ -371,7 +373,7 @@ export default function HomeScreen() {
                         <View style={styles.toolIconContainer}>
                             <MaterialCommunityIcons name="calculator" size={24} color="#00C853" />
                         </View>
-                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>FERT CALC</Text>
+                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>{t('fertCalc')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.toolCard}
@@ -381,7 +383,7 @@ export default function HomeScreen() {
                         <View style={styles.toolIconContainer}>
                             <MaterialCommunityIcons name="bug" size={24} color="#00C853" />
                         </View>
-                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>PEST DOSE</Text>
+                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>{t('pestDose')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.toolCard}
@@ -391,7 +393,7 @@ export default function HomeScreen() {
                         <View style={styles.toolIconContainer}>
                             <MaterialCommunityIcons name="water" size={24} color="#0288D1" />
                         </View>
-                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>IRRIGATION</Text>
+                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>{t('irrigation')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.toolCard}
@@ -401,7 +403,7 @@ export default function HomeScreen() {
                         <View style={styles.toolIconContainer}>
                             <MaterialCommunityIcons name="flask-outline" size={24} color="#795548" />
                         </View>
-                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>SOIL TEST</Text>
+                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>{t('soilTest')}</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -450,7 +452,7 @@ export default function HomeScreen() {
                     <View style={styles.widgetCard}>
                         <View style={styles.widgetHeaderRow}>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Text style={styles.widgetTitle}>Today's Work</Text>
+                                <Text style={styles.widgetTitle}>{t('todaysWork')}</Text>
                                 {dueTasks.length > 0 && <View style={[styles.notificationDot, { marginLeft: 6 }]} />}
                             </View>
                             {dueTasks.length > 1 && (
@@ -466,24 +468,24 @@ export default function HomeScreen() {
                             <View style={{ alignItems: 'center', paddingVertical: 10 }}>
                                 <MaterialCommunityIcons name="clipboard-text-clock-outline" size={28} color="#888" />
                                 <Text style={{ fontSize: 13, color: '#555', marginTop: 4, textAlign: 'center' }}>
-                                    your CROP instructions are getting ready
+                                    {t('cropInstructionsGettingReady')}
                                 </Text>
                             </View>
                         ) : (activeCrops.length === 0 || !hasAnyTasksConfigured) ? (
                             <>
                                 <TouchableOpacity style={styles.taskRow} onPress={() => router.push('/start-crop')}>
                                     <MaterialCommunityIcons name="sprout" size={16} color="#00C853" />
-                                    <Text style={styles.taskText}>Start a crop</Text>
+                                    <Text style={styles.taskText}>{t('startCrop')}</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.taskRow} onPress={() => router.push('/fert-calc')}>
                                     <MaterialCommunityIcons name="calculator" size={16} color="#0288D1" />
-                                    <Text style={styles.taskText}>Check Agri calc</Text>
+                                    <Text style={styles.taskText}>{t('checkAgriCalc')}</Text>
                                 </TouchableOpacity>
                             </>
                         ) : !randomTask ? (
                             <View style={{ alignItems: 'center', paddingVertical: 10 }}>
                                 <MaterialCommunityIcons name="check-circle-outline" size={24} color="#ccc" />
-                                <Text style={{ fontSize: 12, color: '#888', marginTop: 4 }}>All done for today!</Text>
+                                <Text style={{ fontSize: 12, color: '#888', marginTop: 4 }}>{t('allDoneToday')}</Text>
                             </View>
                         ) : (
                             <View style={styles.randomTaskCard}>
@@ -508,7 +510,7 @@ export default function HomeScreen() {
                         
                         {!loadingTasks && activeCrops.length > 0 && dueTasks.length > 1 && (
                             <TouchableOpacity onPress={() => router.push('/(tabs)/crops')}>
-                                <Text style={{ fontSize: 11, color: '#00C853', textAlign: 'center', marginTop: 6 }}>View {dueTasks.length} pending tasks</Text>
+                                <Text style={{ fontSize: 11, color: '#00C853', textAlign: 'center', marginTop: 6 }}>View {dueTasks.length} {t('viewPendingTasks')}</Text>
                             </TouchableOpacity>
                         )}
                     </View>
@@ -537,7 +539,7 @@ export default function HomeScreen() {
                                     ) : (
                                         <>
                                             <MaterialCommunityIcons name="camera" size={20} color="#fff" style={{ marginRight: 6 }} />
-                                            <Text style={styles.heroButtonLargeText}>Scan Now</Text>
+                                            <Text style={styles.heroButtonLargeText}>{t('scanNow')}</Text>
                                         </>
                                     )}
                                 </View>
@@ -545,9 +547,9 @@ export default function HomeScreen() {
                                 {/* Bottom section: Title and Badge Swap */}
                                 <View style={{ marginTop: 'auto' }}>
                                     <View style={styles.heroBadge}>
-                                        <Text style={styles.heroBadgeText}>DIAGNOSTIC</Text>
+                                        <Text style={styles.heroBadgeText}>{t('diagnosticBadge')}</Text>
                                     </View>
-                                    <Text style={[styles.tallActionTitle, { marginTop: 8 }]}>Identify plant illness instantly.</Text>
+                                    <Text style={[styles.tallActionTitle, { marginTop: 8 }]}>{t('diagnosticTitle')}</Text>
                                 </View>
                             </View>
                         </ImageBackground>
@@ -568,15 +570,15 @@ export default function HomeScreen() {
                                 {/* Swap: Big Start Crop button at the TOP */}
                                 <View style={[styles.heroButtonLarge, { backgroundColor: '#D84315', alignSelf: 'flex-start' }]}>
                                     <MaterialCommunityIcons name="seed-outline" size={20} color="#fff" style={{ marginRight: 6 }} />
-                                    <Text style={styles.heroButtonLargeText}>Start Crop</Text>
+                                    <Text style={styles.heroButtonLargeText}>{t('startCrop')}</Text>
                                 </View>
 
                                 {/* Bottom section: Title and Badge Swap */}
                                 <View style={{ marginTop: 'auto' }}>
                                     <View style={[styles.heroBadge, { backgroundColor: '#E64A19' }]}>
-                                        <Text style={styles.heroBadgeText}>NEW CROP</Text>
+                                        <Text style={styles.heroBadgeText}>{t('newCropBadge')}</Text>
                                     </View>
-                                    <Text style={[styles.tallActionTitle, { marginTop: 8 }]}>Add a new crop to your farm.</Text>
+                                    <Text style={[styles.tallActionTitle, { marginTop: 8 }]}>{t('newCropTitle')}</Text>
                                 </View>
                             </View>
                         </ImageBackground>
@@ -585,21 +587,21 @@ export default function HomeScreen() {
 
                 {/* Farming News */}
                 <View style={styles.sectionHeaderRow}>
-                    <Text style={styles.sectionTitle}>🌾 Farming News</Text>
+                    <Text style={styles.sectionTitle}>{t('farmingNews')}</Text>
                     {newsArticles.length > 0 && (
-                        <Text style={styles.newsPersonalizedBadge}>Personalized</Text>
+                        <Text style={styles.newsPersonalizedBadge}>{t('personalized')}</Text>
                     )}
                 </View>
 
                 {newsLoading ? (
                     <View style={styles.newsLoadingContainer}>
                         <ActivityIndicator size="small" color="#00C853" />
-                        <Text style={styles.newsLoadingText}>Fetching latest news...</Text>
+                        <Text style={styles.newsLoadingText}>{t('fetchingNews')}</Text>
                     </View>
                 ) : newsArticles.length === 0 ? (
                     <View style={styles.newsEmptyContainer}>
                         <MaterialCommunityIcons name="newspaper-variant-outline" size={36} color="#ccc" />
-                        <Text style={styles.newsEmptyText}>No news articles yet.{`\n`}Check back soon!</Text>
+                        <Text style={styles.newsEmptyText}>{t('noNews')}</Text>
                     </View>
                 ) : (
                     newsArticles.map((article) => (
@@ -643,19 +645,19 @@ export default function HomeScreen() {
 
                 {/* Library */}
                 <View style={[styles.sectionHeaderRow, { marginTop: 16 }]}>
-                    <Text style={styles.sectionTitle}>📚 Library</Text>
-                    <Text style={styles.viewAllText}>Explore</Text>
+                    <Text style={styles.sectionTitle}>{t('library')}</Text>
+                    <Text style={styles.viewAllText}>{t('explore')}</Text>
                 </View>
 
                 {libraryLoading ? (
                     <View style={styles.newsLoadingContainer}>
                         <ActivityIndicator size="small" color="#00C853" />
-                        <Text style={styles.newsLoadingText}>Loading library...</Text>
+                        <Text style={styles.newsLoadingText}>{t('fetchingNews')}</Text>
                     </View>
                 ) : libraryArticles.length === 0 ? (
                     <View style={styles.newsEmptyContainer}>
                         <MaterialCommunityIcons name="bookshelf" size={36} color="#ccc" />
-                        <Text style={styles.newsEmptyText}>No articles yet.{`\n`}Check back soon!</Text>
+                        <Text style={styles.newsEmptyText}>{t('noNews')}</Text>
                     </View>
                 ) : (
                     <View style={styles.libraryGrid}>
@@ -699,7 +701,7 @@ export default function HomeScreen() {
                         <View style={styles.modalContent}>
                             <View style={styles.modalHeader}>
                                 <MaterialCommunityIcons name="leaf" size={24} color="#00C853" />
-                                <Text style={styles.modalTitle}>Diagnosis Result</Text>
+                                <Text style={styles.modalTitle}>{t('diagnosisResult')}</Text>
                                 <TouchableOpacity onPress={() => setModalVisible(false)}>
                                     <MaterialCommunityIcons name="close" size={24} color="#666" />
                                 </TouchableOpacity>
@@ -707,25 +709,25 @@ export default function HomeScreen() {
                             
                             {diagnosisResult && (
                                 <View style={styles.modalBody}>
-                                    <Text style={styles.resultLabel}>Issue Detected:</Text>
+                                    <Text style={styles.resultLabel}>{t('issueDetected')}</Text>
                                     <Text style={[
                                         styles.resultDisease, 
                                         { color: (diagnosisResult.disease || '').toLowerCase() === 'healthy' ? '#00C853' : '#d32f2f' }
                                     ]}>
-                                        {diagnosisResult.disease || 'Unknown'}
+                                        {diagnosisResult.disease || t('unknown')}
                                     </Text>
                                     
                                     <View style={styles.divider} />
                                     
-                                    <Text style={styles.resultLabel}>Recommended Care:</Text>
+                                    <Text style={styles.resultLabel}>{t('recommendedCare')}</Text>
                                     <Text style={styles.resultCure}>
-                                        {diagnosisResult.cure || 'No treatment recommendations available.'}
+                                        {diagnosisResult.cure || t('noTreatment')}
                                     </Text>
                                 </View>
                             )}
                             
                             <TouchableOpacity style={styles.modalCloseButton} onPress={() => setModalVisible(false)}>
-                                <Text style={styles.modalCloseButtonText}>Done</Text>
+                                <Text style={styles.modalCloseButtonText}>{t('done')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -783,7 +785,7 @@ export default function HomeScreen() {
                                 style={[styles.modalCloseButton, { marginTop: 16 }]}
                                 onPress={() => setNewsModalVisible(false)}
                             >
-                                <Text style={styles.modalCloseButtonText}>Close</Text>
+                                <Text style={styles.modalCloseButtonText}>{t('close')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>

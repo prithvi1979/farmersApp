@@ -3,33 +3,35 @@ import { View, Text, StyleSheet, SafeAreaView, ScrollView, TextInput, TouchableO
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import HeaderDropdown from '../../components/HeaderDropdown';
+import { useLanguage } from '../../context/LanguageContext';
 
 const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 
 export default function MarketScreen() {
     const router = useRouter();
+    const { t } = useLanguage();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeCategory, setActiveCategory] = useState('All');
+    const [activeCategory, setActiveCategory] = useState(t('allCategory'));
 
-    const [categories, setCategories] = useState(['All']);
+    const [categories, setCategories] = useState([t('allCategory')]);
 
     useEffect(() => {
         const fetchProducts = async () => {
             setLoading(true);
             try {
                 let url = `${API_BASE_URL}/market/products`;
-                if (activeCategory !== 'All') {
+                if (activeCategory !== t('allCategory')) {
                     url += `?category=${activeCategory.toLowerCase()}`;
                 }
                 const response = await fetch(url);
                 const data = await response.json();
                 if (data.success) {
                     setProducts(data.data);
-                    if (activeCategory === 'All') {
+                    if (activeCategory === t('allCategory')) {
                         const uniqueCats = ['All', ...new Set(data.data.map(p => p.category))].filter(Boolean);
                         const formattedCats = uniqueCats.map(c => 
-                            c === 'All' ? 'All' : c.charAt(0).toUpperCase() + c.slice(1)
+                            c === 'All' ? t('allCategory') : c.charAt(0).toUpperCase() + c.slice(1)
                         );
                         setCategories(formattedCats);
                     }
@@ -54,7 +56,7 @@ export default function MarketScreen() {
                         <View style={styles.logoIconBg}>
                             <MaterialCommunityIcons name="storefront" size={30} color="#fff" />
                         </View>
-                        <Text style={styles.logoText}>Market</Text>
+                        <Text style={styles.logoText}>{t('market')}</Text>
                     </View>
                     <View style={styles.headerRight}>
                         <TouchableOpacity style={styles.iconButton}>
@@ -69,7 +71,7 @@ export default function MarketScreen() {
                     <MaterialCommunityIcons name="magnify" size={24} color="#888" style={styles.searchIcon} />
                     <TextInput
                         style={styles.searchInput}
-                        placeholder="Search for seeds, tools, fertilizers..."
+                        placeholder={t('searchPlaceholder')}
                         placeholderTextColor="#888"
                     />
                 </View>
@@ -85,8 +87,8 @@ export default function MarketScreen() {
                             <MaterialCommunityIcons name="storefront-outline" size={22} color="#00C853" />
                         </View>
                         <View style={styles.mandiTextContainer}>
-                            <Text style={styles.mandiCtaTitle}>Check Price in nearest Mandi</Text>
-                            <Text style={styles.mandiCtaSub}>Get live location-based AI pricing</Text>
+                            <Text style={styles.mandiCtaTitle}>{t('checkMandiPrice')}</Text>
+                            <Text style={styles.mandiCtaSub}>{t('mandiSub')}</Text>
                         </View>
                     </View>
                     <MaterialCommunityIcons name="chevron-right" size={24} color="#888" />
@@ -106,14 +108,14 @@ export default function MarketScreen() {
                 </ScrollView>
 
                 {/* Product List */}
-                <Text style={styles.sectionTitle}>Featured Products</Text>
+                <Text style={styles.sectionTitle}>{t('featuredProducts')}</Text>
 
                 {loading ? (
                     <ActivityIndicator size="large" color="#00C853" style={{ marginTop: 40 }} />
                 ) : products.length === 0 ? (
                     <View style={styles.emptyState}>
                         <MaterialCommunityIcons name="emoticon-sad-outline" size={48} color="#ccc" />
-                        <Text style={styles.emptyText}>No products found in this category.</Text>
+                        <Text style={styles.emptyText}>{t('noProductsFound')}</Text>
                     </View>
                 ) : (
                     products.map((product) => (
@@ -140,7 +142,7 @@ export default function MarketScreen() {
                                             }
                                         }}
                                     >
-                                        <Text style={styles.buyButtonText}>Buy Now</Text>
+                                        <Text style={styles.buyButtonText}>{t('buyNow')}</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>

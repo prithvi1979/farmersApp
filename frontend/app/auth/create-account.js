@@ -4,11 +4,13 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '../../context/LanguageContext';
 
 const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 
 export default function CreateAccountScreen() {
     const router = useRouter();
+    const { t } = useLanguage();
 
     const [name, setName] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -129,7 +131,7 @@ export default function CreateAccountScreen() {
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <MaterialCommunityIcons name="arrow-left" size={24} color="#111" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Create Account</Text>
+                <Text style={styles.headerTitle}>{t('createAccountTitle')}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -148,16 +150,16 @@ export default function CreateAccountScreen() {
                             <MaterialCommunityIcons name="pencil" size={12} color="#fff" />
                         </View>
                     </TouchableOpacity>
-                    <Text style={styles.avatarHint}>Add Profile Photo (Optional)</Text>
+                    <Text style={styles.avatarHint}>{t('addProfilePhoto')}</Text>
                 </View>
 
                 <View style={styles.formCard}>
-                    <Text style={styles.label}>Full Name *</Text>
+                    <Text style={styles.label}>{t('fullName')}</Text>
                     <View style={styles.inputContainer}>
                         <MaterialCommunityIcons name="account-outline" size={20} color="#888" style={styles.inputIcon} />
                         <TextInput
                             style={styles.input}
-                            placeholder="e.g. Ramesh Kumar"
+                            placeholder={t('namePlaceholder')}
                             value={name}
                             onChangeText={setName}
                             autoCapitalize="words"
@@ -165,12 +167,12 @@ export default function CreateAccountScreen() {
                         />
                     </View>
 
-                    <Text style={styles.label}>Phone Number (Optional)</Text>
+                    <Text style={styles.label}>{t('phoneNumberOptional')}</Text>
                     <View style={styles.inputContainer}>
                         <MaterialCommunityIcons name="phone-outline" size={20} color="#888" style={styles.inputIcon} />
                         <TextInput
                             style={styles.input}
-                            placeholder="10-digit mobile number"
+                            placeholder={t('phonePlaceholder')}
                             value={phoneNumber}
                             onChangeText={setPhoneNumber}
                             keyboardType="phone-pad"
@@ -179,8 +181,8 @@ export default function CreateAccountScreen() {
                         />
                     </View>
 
-                    <Text style={styles.label}>Create 4-Digit PIN *</Text>
-                    <Text style={styles.subLabel}>This secures your device login</Text>
+                    <Text style={styles.label}>{t('create4DigitPin')}</Text>
+                    <Text style={styles.subLabel}>{t('pinSecures')}</Text>
                     <View style={styles.inputContainer}>
                         <MaterialCommunityIcons name="lock-outline" size={20} color="#888" style={styles.inputIcon} />
                         <TextInput
@@ -204,7 +206,7 @@ export default function CreateAccountScreen() {
                     {submitting ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
-                        <Text style={styles.submitButtonText}>Complete Setup</Text>
+                        <Text style={styles.submitButtonText}>{t('completeSetup')}</Text>
                     )}
                 </TouchableOpacity>
 

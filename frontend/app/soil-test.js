@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Act
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '../context/LanguageContext';
 import { Picker } from '@react-native-picker/picker'; // You might need to install @react-native-picker/picker if not already, using react-native simple picker or custom UI instead to be safe without new dependencies.
 
 const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
@@ -19,6 +20,7 @@ const steps = [
 
 export default function SoilTestScreen() {
     const router = useRouter();
+    const { t } = useLanguage();
     const [currentStep, setCurrentStep] = useState(0);
     const [loading, setLoading] = useState(false);
     const [deviceId, setDeviceId] = useState('');
@@ -116,18 +118,18 @@ export default function SoilTestScreen() {
                     <View style={styles.cardInfo}>
                         <View style={styles.introHeader}>
                             <MaterialCommunityIcons name="flask-outline" size={48} color="#795548" />
-                            <Text style={styles.introTitle}>Welcome to Soil Testing</Text>
+                            <Text style={styles.introTitle}>{t('welcomeSoilTest')}</Text>
                         </View>
-                        <Text style={styles.introDesc}>You can perform highly effective DIY soil tests right at your farm. A healthy soil leads to healthy crops. Let's record your soil's properties step-by-step to generate a digital report card.</Text>
+                        <Text style={styles.introDesc}>{t('soilIntroDesc')}</Text>
                         <View style={styles.checklist}>
-                            <Text style={styles.checkItem}>✅ Measure pH using household items</Text>
-                            <Text style={styles.checkItem}>✅ Identify soil texture via the Jar Test</Text>
-                            <Text style={styles.checkItem}>✅ Test field drainage</Text>
-                            <Text style={styles.checkItem}>✅ Check organic matter visually</Text>
-                            <Text style={styles.checkItem}>✅ NPK values (If you have a kit)</Text>
+                            <Text style={styles.checkItem}>{t('soilCheck1')}</Text>
+                            <Text style={styles.checkItem}>{t('soilCheck2')}</Text>
+                            <Text style={styles.checkItem}>{t('soilCheck3')}</Text>
+                            <Text style={styles.checkItem}>{t('soilCheck4')}</Text>
+                            <Text style={styles.checkItem}>{t('soilCheck5')}</Text>
                         </View>
                         <TouchableOpacity style={styles.actionBtn} onPress={() => setCurrentStep(1)}>
-                            <Text style={styles.actionBtnText}>Start Test 1: pH Level</Text>
+                            <Text style={styles.actionBtnText}>{t('startTest1')}</Text>
                             <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />
                         </TouchableOpacity>
                     </View>
@@ -135,16 +137,16 @@ export default function SoilTestScreen() {
             case 1:
                 return (
                     <View style={styles.cardInfo}>
-                        <Text style={styles.testTitle}>🌡️ pH Test (No kit method)</Text>
-                        <Text style={styles.testInstruction}>1. Take a small soil sample in two separate cups.</Text>
-                        <Text style={styles.testInstruction}>2. Add Vinegar to Cup A: If it fizzes, your soil is ALKALINE (High pH {'>'} 7).</Text>
-                        <Text style={styles.testInstruction}>3. Add Baking Soda + Water to Cup B: If it fizzes, your soil is ACIDIC (Low pH {'<'} 7).</Text>
-                        <Text style={styles.testInstruction}>4. If neither fizzes heavily, your soil is NEUTRAL (~6.5 - 7.0).</Text>
+                        <Text style={styles.testTitle}>{t('phTest')}</Text>
+                        <Text style={styles.testInstruction}>{t('phInst1')}</Text>
+                        <Text style={styles.testInstruction}>{t('phInst2')}</Text>
+                        <Text style={styles.testInstruction}>{t('phInst3')}</Text>
+                        <Text style={styles.testInstruction}>{t('phInst4')}</Text>
                         
                         <View style={styles.divider} />
                         
                         <CustomSelector 
-                            label="What was the result?"
+                            label={t('whatResult')}
                             options={[
                                 { label: 'Acidic (< 6.5)', value: 5.5 },
                                 { label: 'Neutral (~7)', value: 7.0 },
@@ -155,23 +157,20 @@ export default function SoilTestScreen() {
                         />
                         
                         <TouchableOpacity style={[styles.actionBtn, !soilData.ph && styles.disabledBtn]} onPress={saveAndNext} disabled={!soilData.ph || loading}>
-                            {loading ? <ActivityIndicator color="#fff"/> : <Text style={styles.actionBtnText}>Save & Next</Text>}
+                            {loading ? <ActivityIndicator color="#fff"/> : <Text style={styles.actionBtnText}>{t('saveNext')}</Text>}
                         </TouchableOpacity>
                     </View>
                 );
             case 2:
                 return (
                     <View style={styles.cardInfo}>
-                        <Text style={styles.testTitle}>🏜️ Soil Texture (Jar Test)</Text>
-                        <Text style={styles.testInstruction}>1. Take a jar and fill 1/3 with soil.</Text>
-                        <Text style={styles.testInstruction}>2. Add water until almost full and a drop of liquid detergent.</Text>
-                        <Text style={styles.testInstruction}>3. Shake vigorously and let it settle for 24 hours.</Text>
-                        <Text style={styles.testInstruction}>The bottom layer is Sand, middle is Silt, top is Clay. Which layer dominates?</Text>
+                        <Text style={styles.testTitle}>{t('textureTest')}</Text>
+                        <Text style={styles.testInstruction}>{t('textureInst')}</Text>
                         
                         <View style={styles.divider} />
                         
                         <CustomSelector 
-                            label="Your Soil Texture"
+                            label={t('yourTexture')}
                             options={[
                                 { label: 'Sandy', value: 'sand' },
                                 { label: 'Clay', value: 'clay' },
@@ -190,15 +189,13 @@ export default function SoilTestScreen() {
             case 3:
                 return (
                     <View style={styles.cardInfo}>
-                        <Text style={styles.testTitle}>💧 Drainage Test</Text>
-                        <Text style={styles.testInstruction}>1. Dig a small hole (approx 12 inches deep).</Text>
-                        <Text style={styles.testInstruction}>2. Fill it completely with water and let it drain once to saturate surrounding soil.</Text>
-                        <Text style={styles.testInstruction}>3. Fill it with water again and time how long it takes to drain.</Text>
+                        <Text style={styles.testTitle}>{t('drainageTest')}</Text>
+                        <Text style={styles.testInstruction}>{t('drainageInst')}</Text>
                         
                         <View style={styles.divider} />
                         
                         <CustomSelector 
-                            label="Drainage Time"
+                            label={t('drainageTime')}
                             options={[
                                 { label: '< 30 Min (Fast)', value: 'fast' },
                                 { label: '30m - 2h (Ideal)', value: 'ideal' },
@@ -216,15 +213,13 @@ export default function SoilTestScreen() {
             case 4:
                 return (
                     <View style={styles.cardInfo}>
-                        <Text style={styles.testTitle}>🌿 Organic Matter</Text>
-                        <Text style={styles.testInstruction}>Organic matter determines soil fertility and microbiological health.</Text>
-                        <Text style={styles.testInstruction}>- Dark, crumbly soil with an earthy smell = High Oragnic Matter.</Text>
-                        <Text style={styles.testInstruction}>- Hard, crusty, pale soil or bad foul smell = Poor / Low Organic Matter.</Text>
+                        <Text style={styles.testTitle}>{t('organicMatter')}</Text>
+                        <Text style={styles.testInstruction}>{t('organicInst')}</Text>
                         
                         <View style={styles.divider} />
                         
                         <CustomSelector 
-                            label="Visual & Smell Assessment"
+                            label={t('visualAssessment')}
                             options={[
                                 { label: 'Low / Poor', value: 'low' },
                                 { label: 'Medium', value: 'medium' },
@@ -242,14 +237,13 @@ export default function SoilTestScreen() {
             case 5:
                 return (
                     <View style={styles.cardInfo}>
-                        <Text style={styles.testTitle}>🧴 NPK Kit (Optional)</Text>
-                        <Text style={styles.testInstruction}>If you have a primary soil testing kit with colour-based strips, you can log the Nitrogen, Phosphorus, and Potassium results here.</Text>
-                        <Text style={styles.testInstruction}>If you don't have a kit, you can leave these as 'Medium' for a balanced baseline assumption.</Text>
+                        <Text style={styles.testTitle}>{t('npkKit')}</Text>
+                        <Text style={styles.testInstruction}>{t('npkInst')}</Text>
                         
                         <View style={styles.divider} />
                         
                         <CustomSelector 
-                            label="Nitrogen (N)"
+                            label={t('nitrogen')}
                             options={[
                                 { label: 'Low', value: 'low' }, { label: 'Med', value: 'medium' }, { label: 'High', value: 'high' }
                             ]}
@@ -258,7 +252,7 @@ export default function SoilTestScreen() {
                         />
                         <View style={{ height: 10 }} />
                         <CustomSelector 
-                            label="Phosphorus (P)"
+                            label={t('phosphorus')}
                             options={[
                                 { label: 'Low', value: 'low' }, { label: 'Med', value: 'medium' }, { label: 'High', value: 'high' }
                             ]}
@@ -267,7 +261,7 @@ export default function SoilTestScreen() {
                         />
                          <View style={{ height: 10 }} />
                         <CustomSelector 
-                            label="Potassium (K)"
+                            label={t('potassium')}
                             options={[
                                 { label: 'Low', value: 'low' }, { label: 'Med', value: 'medium' }, { label: 'High', value: 'high' }
                             ]}
@@ -276,7 +270,7 @@ export default function SoilTestScreen() {
                         />
                         
                         <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#FF8F00' }]} onPress={saveAndNext} disabled={loading}>
-                            {loading ? <ActivityIndicator color="#fff"/> : <Text style={styles.actionBtnText}>Generate Soil Report 📊</Text>}
+                            {loading ? <ActivityIndicator color="#fff"/> : <Text style={styles.actionBtnText}>{t('generateReport')}</Text>}
                         </TouchableOpacity>
                     </View>
                 );
@@ -287,8 +281,8 @@ export default function SoilTestScreen() {
                             <>
                                 <View style={styles.reportHeader}>
                                     <View>
-                                        <Text style={styles.reportDate}>Generated on {new Date().toLocaleDateString()}</Text>
-                                        <Text style={styles.reportTitle}>Farm Soil Report</Text>
+                                        <Text style={styles.reportDate}>{t('reportDate')} {new Date().toLocaleDateString()}</Text>
+                                        <Text style={styles.reportTitle}>{t('reportTitle')}</Text>
                                     </View>
                                     <View style={styles.scoreCircle}>
                                         <Text style={styles.scoreText}>{reportData.score}</Text>
@@ -313,7 +307,7 @@ export default function SoilTestScreen() {
 
                                 <View style={styles.divider} />
                                 
-                                <Text style={styles.sectionHeading}>🌾 Recommended Crops</Text>
+                                <Text style={styles.sectionHeading}>{t('recommendedCrops')}</Text>
                                 <View style={styles.tagsContainer}>
                                     {reportData.cropsToGrow?.map((crop, i) => (
                                         <View key={'ok-'+i} style={styles.tagGood}>
@@ -324,7 +318,7 @@ export default function SoilTestScreen() {
 
                                 {reportData.cropsToAvoid && reportData.cropsToAvoid.length > 0 && (
                                     <>
-                                        <Text style={[styles.sectionHeading, { marginTop: 16 }]}>⚠️ Crops to Avoid</Text>
+                                        <Text style={[styles.sectionHeading, { marginTop: 16 }]}>{t('cropsToAvoid')}</Text>
                                         <View style={styles.tagsContainer}>
                                             {reportData.cropsToAvoid.map((crop, i) => (
                                                 <View key={'bad-'+i} style={styles.tagBad}>
@@ -337,7 +331,7 @@ export default function SoilTestScreen() {
 
                                 <View style={styles.divider} />
 
-                                <Text style={styles.sectionHeading}>🧴 Fertilizer Plan</Text>
+                                <Text style={styles.sectionHeading}>{t('fertilizerPlan')}</Text>
                                 {reportData.fertilizerPlan?.map((plan, i) => (
                                     <View key={i} style={styles.planRow}>
                                         <Text style={styles.planPeriod}>{plan.period}:</Text>
@@ -347,17 +341,17 @@ export default function SoilTestScreen() {
 
                                 <View style={styles.divider} />
                                 
-                                <Text style={styles.sectionHeading}>🧠 AI Insight</Text>
+                                <Text style={styles.sectionHeading}>{t('aiInsight')}</Text>
                                 <Text style={styles.aiInsightText}>{reportData.recommendation}</Text>
 
                                 <TouchableOpacity style={[styles.actionBtn, { marginTop: 20 }]} onPress={() => router.push('/(tabs)')}>
-                                    <Text style={styles.actionBtnText}>Done</Text>
+                                    <Text style={styles.actionBtnText}>{t('done')}</Text>
                                 </TouchableOpacity>
                             </>
                         ) : (
                             <View style={{ padding: 40, alignItems: 'center' }}>
                                 <ActivityIndicator size="large" color="#00C853" />
-                                <Text style={{ marginTop: 12, color: '#666' }}>Generating AI Report...</Text>
+                                <Text style={{ marginTop: 12, color: '#666' }}>{t('generatingReport')}</Text>
                             </View>
                         )}
                     </View>
@@ -372,14 +366,14 @@ export default function SoilTestScreen() {
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
                     <MaterialCommunityIcons name="arrow-left" size={24} color="#333" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Soil Test Module</Text>
+                <Text style={styles.headerTitle}>{t('soilTestModule')}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
             {/* Stepper Progress */}
             {currentStep > 0 && currentStep < 6 && (
                 <View style={styles.stepperContainer}>
-                    <Text style={styles.stepText}>Step {currentStep} of 5</Text>
+                    <Text style={styles.stepText}>{t('step')} {currentStep} {t('of')} 5</Text>
                     <View style={styles.progressBarBg}>
                         <View style={[styles.progressBarFill, { width: `${(currentStep / 5) * 100}%` }]} />
                     </View>

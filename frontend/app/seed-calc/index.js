@@ -12,15 +12,46 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import CropAutofillInput from '../../components/CropAutofillInput';
 
-// Seed Info Data (seed rates in kg per hectare)
-const CROPS = [
-    { id: 'wheat', name: 'Wheat', icon: 'barley', defaultRate: 100, spacing: '20-22 cm', depth: '4-5 cm' },
-    { id: 'rice', name: 'Rice', icon: 'rice', defaultRate: 25, spacing: '20-25 cm', depth: '2-3 cm' },
-    { id: 'corn', name: 'Corn', icon: 'corn', defaultRate: 20, spacing: '60-70 cm', depth: '4-6 cm' },
-    { id: 'soybean', name: 'Soybean', icon: 'seed-outline', defaultRate: 65, spacing: '45-60 cm', depth: '3-4 cm' },
-    { id: 'cotton', name: 'Cotton', icon: 'cannabis', defaultRate: 15, spacing: '90-100 cm', depth: '3-5 cm' },
-];
+// Fallback seed defaults for well-known crops (kg/ha, spacing, depth)
+// Any crop selected from MongoDB that isn't listed here gets the GENERIC_DEFAULT.
+const SEED_DEFAULTS = {
+    wheat:        { defaultRate: 100, spacing: '20-22 cm', depth: '4-5 cm' },
+    rice:         { defaultRate: 25,  spacing: '20-25 cm', depth: '2-3 cm' },
+    corn:         { defaultRate: 20,  spacing: '60-70 cm', depth: '4-6 cm' },
+    maize:        { defaultRate: 20,  spacing: '60-70 cm', depth: '4-6 cm' },
+    soybean:      { defaultRate: 65,  spacing: '45-60 cm', depth: '3-4 cm' },
+    cotton:       { defaultRate: 15,  spacing: '90-100 cm', depth: '3-5 cm' },
+    tomato:       { defaultRate: 0.4, spacing: '60-90 cm',  depth: '0.5 cm' },
+    potato:       { defaultRate: 2000,spacing: '30-40 cm', depth: '8-10 cm' },
+    onion:        { defaultRate: 8,   spacing: '10-15 cm', depth: '1-2 cm' },
+    chilli:       { defaultRate: 1,   spacing: '45-60 cm', depth: '0.5 cm' },
+    capsicum:     { defaultRate: 0.4, spacing: '45-60 cm', depth: '0.5 cm' },
+    mustard:      { defaultRate: 5,   spacing: '30-45 cm', depth: '2-3 cm' },
+    groundnut:    { defaultRate: 100, spacing: '30-45 cm', depth: '5-6 cm' },
+    sunflower:    { defaultRate: 5,   spacing: '60-75 cm', depth: '4-5 cm' },
+    sugarcane:    { defaultRate: 40000, spacing: '90 cm',  depth: '20-25 cm' },
+    barley:       { defaultRate: 90,  spacing: '22-25 cm', depth: '4-5 cm' },
+    sorghum:      { defaultRate: 10,  spacing: '45-60 cm', depth: '3-4 cm' },
+    chickpea:     { defaultRate: 70,  spacing: '30-45 cm', depth: '5-7 cm' },
+    lentil:       { defaultRate: 40,  spacing: '20-25 cm', depth: '3-4 cm' },
+    pigeon_pea:   { defaultRate: 15,  spacing: '60-75 cm', depth: '5-6 cm' },
+    moong:        { defaultRate: 20,  spacing: '30-45 cm', depth: '3-4 cm' },
+    urad:         { defaultRate: 20,  spacing: '30-45 cm', depth: '3-4 cm' },
+    sesame:       { defaultRate: 5,   spacing: '30-45 cm', depth: '2-3 cm' },
+    jute:         { defaultRate: 7,   spacing: '25-30 cm', depth: '2-3 cm' },
+    banana:       { defaultRate: 1500, spacing: '2-3 m',   depth: '60-90 cm' },
+    brinjal:      { defaultRate: 0.5, spacing: '60-75 cm', depth: '0.5 cm' },
+    cauliflower:  { defaultRate: 0.3, spacing: '45-60 cm', depth: '0.5 cm' },
+    cabbage:      { defaultRate: 0.3, spacing: '45-60 cm', depth: '0.5 cm' },
+    okra:         { defaultRate: 10,  spacing: '30-45 cm', depth: '2-3 cm' },
+    cucumber:     { defaultRate: 2,   spacing: '60-90 cm', depth: '2-3 cm' },
+    watermelon:   { defaultRate: 2,   spacing: '150 cm',   depth: '2-3 cm' },
+    carrot:       { defaultRate: 4,   spacing: '10 cm',    depth: '1-2 cm' },
+};
+
+const GENERIC_DEFAULT = { defaultRate: 20, spacing: '30-45 cm', depth: '3-5 cm' };
 
 const AREA_UNITS = ['Acre', 'Hectare', 'Sq Meter'];
 
@@ -28,34 +59,43 @@ export default function SeedCalculatorScreen() {
     const router = useRouter();
 
     // Form State
-    const [selectedCrop, setSelectedCrop] = useState(CROPS[0]); // Default to Wheat
+    const [selectedCrop, setSelectedCrop] = useState(null); // { _id, name }
 
     // Numeric inputs
     const [fieldArea, setFieldArea] = useState('2');
     const [areaUnit, setAreaUnit] = useState('Acre');
 
-    // Seed rate is initially populated by the crop selection but editable
-    const [manualSeedRate, setManualSeedRate] = useState(CROPS[0].defaultRate.toString());
+    // Seed rate is initially empty; auto-fills when a crop is selected
+    const [manualSeedRate, setManualSeedRate] = useState('');
+    const [cropMeta, setCropMeta] = useState(null); // { spacing, depth }
 
-    // Update seed rate when a new crop is selected
     const handleCropSelect = (crop) => {
         setSelectedCrop(crop);
-        setManualSeedRate(crop.defaultRate.toString());
+        const key = crop.name.toLowerCase().replace(/[^a-z]/g, '_');
+        const def = SEED_DEFAULTS[key] || SEED_DEFAULTS[crop.name.toLowerCase()] || GENERIC_DEFAULT;
+        setManualSeedRate(def.defaultRate.toString());
+        setCropMeta({ spacing: def.spacing, depth: def.depth });
+    };
+
+    const handleCropClear = () => {
+        setSelectedCrop(null);
+        setManualSeedRate('');
+        setCropMeta(null);
     };
 
     const handleCalculate = () => {
-        if (!fieldArea || !manualSeedRate) return;
+        if (!fieldArea || !manualSeedRate || !selectedCrop) return;
 
         router.push({
             pathname: '/seed-calc/results',
             params: {
-                cropId: selectedCrop.id,
+                cropId: selectedCrop._id || selectedCrop.name.toLowerCase(),
                 cropName: selectedCrop.name,
                 fieldArea,
                 areaUnit,
                 seedRate: manualSeedRate,
-                spacing: selectedCrop.spacing,
-                depth: selectedCrop.depth
+                spacing: cropMeta?.spacing || GENERIC_DEFAULT.spacing,
+                depth: cropMeta?.depth || GENERIC_DEFAULT.depth,
             }
         });
     };
@@ -75,26 +115,25 @@ export default function SeedCalculatorScreen() {
                 {/* 1. Crop Selection */}
                 <View style={[styles.section, styles.card]}>
                     <Text style={styles.sectionTitle}>1. Select Crop</Text>
-                    <View style={styles.cropGrid}>
-                        {CROPS.map((crop) => (
-                            <TouchableOpacity
-                                key={crop.id}
-                                style={[styles.cropCard, selectedCrop.id === crop.id && styles.cropCardActive]}
-                                onPress={() => handleCropSelect(crop)}
-                            >
-                                <View style={[styles.iconBg, selectedCrop.id === crop.id && styles.iconBgActive]}>
-                                    <MaterialCommunityIcons
-                                        name={crop.icon}
-                                        size={28}
-                                        color={selectedCrop.id === crop.id ? "#fff" : "#00C853"}
-                                    />
-                                </View>
-                                <Text style={[styles.cropText, selectedCrop.id === crop.id && styles.cropTextActive]}>
-                                    {crop.name}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
+                    <CropAutofillInput
+                        placeholder="Type to search e.g. Tomato"
+                        accentColor="#00C853"
+                        onSelect={handleCropSelect}
+                        onCustom={(name) => handleCropSelect({ _id: null, name })}
+                        onClear={handleCropClear}
+                    />
+                    {cropMeta && (
+                        <View style={styles.metaRow}>
+                            <View style={styles.metaChip}>
+                                <MaterialCommunityIcons name="ruler" size={13} color="#555" />
+                                <Text style={styles.metaText}>Spacing: {cropMeta.spacing}</Text>
+                            </View>
+                            <View style={styles.metaChip}>
+                                <MaterialCommunityIcons name="arrow-collapse-down" size={13} color="#555" />
+                                <Text style={styles.metaText}>Depth: {cropMeta.depth}</Text>
+                            </View>
+                        </View>
+                    )}
                 </View>
 
                 {/* 2. Field Area */}
@@ -134,7 +173,10 @@ export default function SeedCalculatorScreen() {
                 <View style={[styles.section, styles.card]}>
                     <Text style={styles.sectionTitle}>3. Expected Seed Rate</Text>
                     <Text style={styles.helperText}>
-                        Standard recommended rate for <Text style={{ fontWeight: 'bold', color: '#111' }}>{selectedCrop.name}</Text>. You can edit this if your soil type or planting method requires a different density.
+                        {selectedCrop
+                            ? <>Standard recommended rate for <Text style={{ fontWeight: 'bold', color: '#111' }}>{selectedCrop.name}</Text>. You can edit this if your soil type or planting method requires a different density.</>
+                            : 'Select a crop above to auto-fill the recommended seed rate. You can edit it manually.'
+                        }
                     </Text>
 
                     <View style={styles.rateInputContainer}>
@@ -153,9 +195,9 @@ export default function SeedCalculatorScreen() {
 
                 {/* Calculate Button */}
                 <TouchableOpacity
-                    style={[styles.calculateButton, (!fieldArea || !manualSeedRate) && styles.calculateButtonDisabled]}
+                    style={[styles.calculateButton, (!fieldArea || !manualSeedRate || !selectedCrop) && styles.calculateButtonDisabled]}
                     onPress={handleCalculate}
-                    disabled={!fieldArea || !manualSeedRate}
+                    disabled={!fieldArea || !manualSeedRate || !selectedCrop}
                 >
                     <Text style={styles.calculateButtonText}>Calculate Seed Needed</Text>
                     <MaterialCommunityIcons name="calculator-variant-outline" size={24} color="#fff" style={{ marginLeft: 8 }} />
@@ -309,6 +351,26 @@ const styles = StyleSheet.create({
         color: '#666',
         lineHeight: 20,
         marginBottom: 16,
+    },
+    metaRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginTop: 12,
+    },
+    metaChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: '#f0f0f0',
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+    },
+    metaText: {
+        fontSize: 12,
+        color: '#555',
+        fontWeight: '500',
     },
     rateInputContainer: {
         flexDirection: 'row',

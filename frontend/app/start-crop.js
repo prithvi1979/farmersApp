@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Tex
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '../context/LanguageContext';
 
 const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 
 export default function StartCropScreen() {
     const router = useRouter();
+    const { t } = useLanguage();
     const [submitting, setSubmitting] = useState(false);
     
     // Auto-suggest fields
@@ -65,7 +67,7 @@ export default function StartCropScreen() {
 
     const handleStartCrop = async () => {
         if (!searchQuery.trim()) {
-            Alert.alert('Error', 'Please enter a crop name.');
+            Alert.alert('Error', t('cropNameLabel').replace(' *','') + ' is required.');
             return;
         }
 
@@ -99,7 +101,7 @@ export default function StartCropScreen() {
             const json = await response.json();
 
             if (json.success) {
-                Alert.alert('Success', 'Crop started successfully!', [
+                Alert.alert('Success', t('cropStartedSuccess'), [
                     { text: 'OK', onPress: () => router.push('/(tabs)/crops') }
                 ]);
             } else {
@@ -120,18 +122,18 @@ export default function StartCropScreen() {
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <MaterialCommunityIcons name="arrow-left" size={24} color="#111" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Start a Crop</Text>
+                <Text style={styles.headerTitle}>{t('startACrop')}</Text>
                 <View style={{ width: 40 }} />
             </View>
             
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                 <View style={styles.formCard}>
-                    <Text style={styles.label}>Crop Name *</Text>
+                    <Text style={styles.label}>{t('cropNameLabel')}</Text>
                     <View style={styles.searchContainer}>
                         <MaterialCommunityIcons name="magnify" size={20} color="#888" style={styles.searchIcon} />
                         <TextInput
                             style={styles.searchInput}
-                            placeholder="Type to search e.g. Tomato"
+                            placeholder={t('typeToSearch')}
                             value={searchQuery}
                             onChangeText={handleSearchChange}
                             onFocus={() => { if(searchQuery) setShowSuggestions(true); }}
@@ -162,26 +164,26 @@ export default function StartCropScreen() {
                                 <View style={styles.suggestionItem}>
                                     <View>
                                         <Text style={styles.suggestionText}>"{searchQuery}" not found.</Text>
-                                        <Text style={{ fontSize: 12, color: '#888', marginTop: 2 }}>Tap Start below to add this as a new crop!</Text>
+                                        <Text style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{t('notFoundSuggestion')}</Text>
                                     </View>
                                 </View>
                             ) : null}
                         </View>
                     )}
 
-                    <Text style={styles.label}>Custom Alias (Optional)</Text>
+                    <Text style={styles.label}>{t('customAlias')}</Text>
                     <TextInput 
                         style={styles.input} 
-                        placeholder="e.g. Backyard Tomatoes"
+                        placeholder={t('aliasPlaceholder')}
                         value={customName}
                         onChangeText={setCustomName}
                     />
 
-                    <Text style={styles.label}>Total Area</Text>
+                    <Text style={styles.label}>{t('totalArea')}</Text>
                     <View style={styles.row}>
                         <TextInput 
                             style={[styles.input, { flex: 1, marginRight: 12 }]} 
-                            placeholder="e.g. 5"
+                            placeholder={t('areaPlaceholder')}
                             keyboardType="numeric"
                             value={totalArea}
                             onChangeText={setTotalArea}
@@ -201,7 +203,7 @@ export default function StartCropScreen() {
                         ))}
                     </ScrollView>
 
-                    <Text style={styles.label}>Farming Method</Text>
+                    <Text style={styles.label}>{t('farmingMethod')}</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
                         {['conventional', 'organic', 'hydroponic', 'other'].map(method => (
                             <TouchableOpacity 
@@ -216,7 +218,7 @@ export default function StartCropScreen() {
                         ))}
                     </ScrollView>
 
-                    <Text style={styles.label}>Soil Type</Text>
+                    <Text style={styles.label}>{t('soilTypeLabel')}</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
                         {['loamy', 'clay', 'sandy', 'silty', 'peaty'].map(soil => (
                             <TouchableOpacity 
@@ -240,7 +242,7 @@ export default function StartCropScreen() {
                     {submitting ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
-                        <Text style={styles.submitButtonText}>Start Crop</Text>
+                        <Text style={styles.submitButtonText}>{t('startACrop')}</Text>
                     )}
                 </TouchableOpacity>
             </ScrollView>

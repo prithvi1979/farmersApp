@@ -13,22 +13,15 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import CropAutofillInput from '../../components/CropAutofillInput';
 
 const PESTICIDES = {
     imidacloprid: { name: 'Imidacloprid', type: 'insecticide', dose_per_liter: 0.5, unit: 'ml' },
     chlorpyrifos: { name: 'Chlorpyrifos', type: 'insecticide', dose_per_liter: 2, unit: 'ml' },
     mancozeb: { name: 'Mancozeb', type: 'fungicide', dose_per_liter: 2, unit: 'g' },
     lambda_cyhalothrin: { name: 'Lambda Cyhalothrin', type: 'insecticide', dose_per_liter: 0.5, unit: 'ml' },
-    neem_oil: { name: 'Neem Oil', type: 'organic', dose_per_liter: 5, unit: 'ml' } // Kept neem oil as bonus
+    neem_oil: { name: 'Neem Oil', type: 'organic', dose_per_liter: 5, unit: 'ml' }
 };
-
-const CROPS = [
-    { id: 'rice', name: 'Rice', icon: 'rice' },
-    { id: 'wheat', name: 'Wheat', icon: 'barley' },
-    { id: 'tomato', name: 'Tomato', icon: 'food-apple' },
-    { id: 'cotton', name: 'Cotton', icon: 'cannabis' },
-    { id: 'chilli', name: 'Chilli', icon: 'pepper-hot' },
-];
 
 const PROBLEMS = ['Aphids', 'Leaf spot', 'Stem borer', 'Whitefly'];
 const TANK_SIZES = ['15', '16', '20'];
@@ -38,7 +31,7 @@ export default function PesticideCalculatorScreen() {
     const router = useRouter();
 
     // Form State
-    const [selectedCrop, setSelectedCrop] = useState('');
+    const [selectedCropName, setSelectedCropName] = useState('');
     const [selectedProblem, setSelectedProblem] = useState('');
 
     // Pesticide specific state
@@ -61,6 +54,7 @@ export default function PesticideCalculatorScreen() {
         router.push({
             pathname: '/pest-calc/results',
             params: {
+                cropName: selectedCropName,
                 pestName: PESTICIDES[selectedPesticide].name,
                 dose: PESTICIDES[selectedPesticide].dose_per_liter,
                 doseUnit: PESTICIDES[selectedPesticide].unit,
@@ -87,25 +81,13 @@ export default function PesticideCalculatorScreen() {
                 {/* 1. Crop Selection */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>1. Select Crop</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-                        {CROPS.map((crop) => (
-                            <TouchableOpacity
-                                key={crop.id}
-                                style={[styles.chip, selectedCrop === crop.id && styles.chipActive]}
-                                onPress={() => setSelectedCrop(crop.id)}
-                            >
-                                <MaterialCommunityIcons
-                                    name={crop.icon}
-                                    size={20}
-                                    color={selectedCrop === crop.id ? "#fff" : "#555"}
-                                    style={{ marginRight: 6 }}
-                                />
-                                <Text style={[styles.chipText, selectedCrop === crop.id && styles.chipTextActive]}>
-                                    {crop.name}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
+                    <CropAutofillInput
+                        placeholder="Type to search e.g. Rice"
+                        accentColor="#00C853"
+                        onSelect={(crop) => setSelectedCropName(crop.name)}
+                        onCustom={(name) => setSelectedCropName(name)}
+                        onClear={() => setSelectedCropName('')}
+                    />
                 </View>
 
                 {/* 2. Problem Selection */}

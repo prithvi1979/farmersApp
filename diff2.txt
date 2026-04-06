@@ -1,0 +1,500 @@
+﻿diff --git a/frontend/app/(tabs)/crops.js b/frontend/app/(tabs)/crops.js
+index 7a4cfa3..2fdcf1a 100644
+--- a/frontend/app/(tabs)/crops.js
++++ b/frontend/app/(tabs)/crops.js
+@@ -4,11 +4,13 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
+ import { useRouter } from 'expo-router';
+ import { useFocusEffect } from '@react-navigation/native';
+ import AsyncStorage from '@react-native-async-storage/async-storage';
++import { useLanguage } from '../../context/LanguageContext';
+ 
+ const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
+ 
+ export default function CropsScreen() {
+     const router = useRouter();
++    const { t } = useLanguage();
+     const [crops, setCrops] = useState([]);
+     const [loading, setLoading] = useState(true);
+     const [refreshing, setRefreshing] = useState(false);
+@@ -45,7 +47,7 @@ export default function CropsScreen() {
+         return (
+             <SafeAreaView style={styles.safeArea}>
+                 <View style={styles.header}>
+-                    <Text style={styles.headerTitle}>Your Crops</Text>
++                    <Text style={styles.headerTitle}>{t('yourCrops')}</Text>
+                 </View>
+                 <View style={styles.center}>
+                     <ActivityIndicator size="large" color="#00C853" />
+@@ -57,7 +59,7 @@ export default function CropsScreen() {
+     return (
+         <SafeAreaView style={styles.safeArea}>
+             <View style={styles.header}>
+-                <Text style={styles.headerTitle}>Your Crops</Text>
++                <Text style={styles.headerTitle}>{t('yourCrops')}</Text>
+                 <TouchableOpacity onPress={() => router.push('/start-crop')} style={styles.addButton}>
+                     <MaterialCommunityIcons name="plus" size={24} color="#00C853" />
+                 </TouchableOpacity>
+@@ -71,10 +73,10 @@ export default function CropsScreen() {
+                 {crops.length === 0 ? (
+                     <View style={styles.emptyContainer}>
+                         <MaterialCommunityIcons name="sprout-outline" size={80} color="#ccc" />
+-                        <Text style={styles.emptyTitle}>No Active Crops</Text>
+-                        <Text style={styles.emptyDesc}>You haven't started any crops yet. Tap the + icon to begin your farming journey!</Text>
++                        <Text style={styles.emptyTitle}>{t('noActiveCrops')}</Text>
++                        <Text style={styles.emptyDesc}>{t('noCropsDesc')}</Text>
+                         <TouchableOpacity style={styles.startCropBtn} onPress={() => router.push('/start-crop')}>
+-                            <Text style={styles.startCropBtnText}>Start a Crop</Text>
++                            <Text style={styles.startCropBtnText}>{t('startCrop')}</Text>
+                         </TouchableOpacity>
+                     </View>
+                 ) : (
+@@ -87,12 +89,12 @@ export default function CropsScreen() {
+                                 <View style={styles.cropInfo}>
+                                     <Text style={styles.cropName}>{crop.cropName || 'Crop'}</Text>
+                                     <Text style={styles.cropStarted}>
+-                                        Started: {new Date(crop.startDate).toLocaleDateString()}
++                                        {t('started')}: {new Date(crop.startDate).toLocaleDateString()}
+                                     </Text>
+                                 </View>
+                                 <View style={[styles.statusBadge, crop.status === 'inactive' && { backgroundColor: '#ffebee' }]}>
+                                     <Text style={[styles.statusText, crop.status === 'inactive' && { color: '#d32f2f' }]}>
+-                                        {crop.status === 'inactive' ? 'Inactive' : 'Active'}
++                                        {crop.status === 'inactive' ? t('inactive') : t('active')}
+                                     </Text>
+                                 </View>
+                             </View>
+@@ -101,7 +103,7 @@ export default function CropsScreen() {
+                             {crop.status !== 'inactive' && (
+                                 <View style={styles.progressContainer}>
+                                     <View style={styles.progressHeader}>
+-                                        <Text style={styles.progressTitle}>Progress</Text>
++                                        <Text style={styles.progressTitle}>{t('progress')}</Text>
+                                         <Text style={styles.progressPercent}>{crop.completionPercentage || 0}%</Text>
+                                     </View>
+                                     <View style={styles.progressBarBg}>
+@@ -109,7 +111,7 @@ export default function CropsScreen() {
+                                     </View>
+                                     {crop.currentPhaseName && crop.currentPhaseName !== 'N/A' && (
+                                         <Text style={styles.phaseInfoText}>
+-                                            Current Phase: <Text style={{fontWeight: 'bold', color: '#333'}}>{crop.currentPhaseName}</Text> ({crop.daysRemaining} days left)
++                                            {t('currentPhase')}: <Text style={{fontWeight: 'bold', color: '#333'}}>{crop.currentPhaseName}</Text> ({crop.daysRemaining} {t('daysLeft')})
+                                         </Text>
+                                     )}
+                                 </View>
+@@ -119,11 +121,11 @@ export default function CropsScreen() {
+                             
+                             {crop.status === 'inactive' ? (
+                                 <Text style={[styles.taskHeader, { color: '#d32f2f', fontSize: 13, lineHeight: 18, fontStyle: 'italic' }]}>
+-                                    You can soon start your crop after we create a customised task to do list for you
++                                    {t('waitingTasksDesc')}
+                                 </Text>
+                             ) : (
+                                 <Text style={styles.taskHeader}>
+-                                    {crop.dueTasks && crop.dueTasks.length > 0 ? `${crop.dueTasks.length} Tasks Pending Right Now` : 'Looking good! No pending tasks.'}
++                                    {crop.dueTasks && crop.dueTasks.length > 0 ? `${crop.dueTasks.length} ${t('tasksPending')}` : t('noPendingTasks')}
+                                 </Text>
+                             )}
+ 
+@@ -132,7 +134,7 @@ export default function CropsScreen() {
+                                     <MaterialCommunityIcons name="circle-outline" size={18} color="#f57c00" />
+                                     <View style={styles.taskDetails}>
+                                         <Text style={styles.taskTitle}>{task.title}</Text>
+-                                        {task.phaseName && <Text style={styles.taskPhase}>Phase: {task.phaseName}</Text>}
++                                        {task.phaseName && <Text style={styles.taskPhase}>{t('phase')}: {task.phaseName}</Text>}
+                                     </View>
+                                 </View>
+                             ))}
+@@ -142,7 +144,7 @@ export default function CropsScreen() {
+                                     style={styles.seeInstructionsBtn}
+                                     onPress={() => router.push(`/crop-instructions/${crop._id}`)}
+                                 >
+-                                    <Text style={styles.seeInstructionsBtnText}>Workflow & Instructions</Text>
++                                    <Text style={styles.seeInstructionsBtnText}>{t('workflowInstructions')}</Text>
+                                     <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />
+                                 </TouchableOpacity>
+                             )}
+diff --git a/frontend/app/(tabs)/index.js b/frontend/app/(tabs)/index.js
+index fce4925..ba7b691 100644
+--- a/frontend/app/(tabs)/index.js
++++ b/frontend/app/(tabs)/index.js
+@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
+ import { useFocusEffect } from '@react-navigation/native';
+ import Constants from 'expo-constants';
+ import HeaderDropdown from '../../components/HeaderDropdown';
++import { useLanguage } from '../../context/LanguageContext';
+ import * as ImagePicker from 'expo-image-picker';
+ import AsyncStorage from '@react-native-async-storage/async-storage';
+ 
+@@ -27,6 +28,7 @@ const LIBRARY_CATEGORY_COLORS = {
+ 
+ export default function HomeScreen() {
+     const router = useRouter();
++    const { t } = useLanguage();
+ 
+     const [weather, setWeather] = useState(null);
+     const [weatherLoading, setWeatherLoading] = useState(true);
+@@ -342,8 +344,8 @@ export default function HomeScreen() {
+                             <MaterialCommunityIcons name="robot" size={26} color="#fff" />
+                         </View>
+                         <View>
+-                            <Text style={styles.assistantBannerTitle}>AI Agronomy Assistant</Text>
+-                            <Text style={styles.assistantBannerSub}>Ask anything about your crops</Text>
++                            <Text style={styles.assistantBannerTitle}>{t('aiAssistantTitle')}</Text>
++                            <Text style={styles.assistantBannerSub}>{t('aiAssistantSub')}</Text>
+                         </View>
+                     </View>
+                     <View style={styles.assistantBannerArrow}>
+@@ -361,7 +363,7 @@ export default function HomeScreen() {
+                         <View style={styles.toolIconContainer}>
+                             <MaterialCommunityIcons name="seed" size={24} color="#00C853" />
+                         </View>
+-                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>SEED CALC</Text>
++                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>{t('seedCalc')}</Text>
+                     </TouchableOpacity>
+                     <TouchableOpacity
+                         style={styles.toolCard}
+@@ -371,7 +373,7 @@ export default function HomeScreen() {
+                         <View style={styles.toolIconContainer}>
+                             <MaterialCommunityIcons name="calculator" size={24} color="#00C853" />
+                         </View>
+-                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>FERT CALC</Text>
++                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>{t('fertCalc')}</Text>
+                     </TouchableOpacity>
+                     <TouchableOpacity
+                         style={styles.toolCard}
+@@ -381,7 +383,7 @@ export default function HomeScreen() {
+                         <View style={styles.toolIconContainer}>
+                             <MaterialCommunityIcons name="bug" size={24} color="#00C853" />
+                         </View>
+-                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>PEST DOSE</Text>
++                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>{t('pestDose')}</Text>
+                     </TouchableOpacity>
+                     <TouchableOpacity
+                         style={styles.toolCard}
+@@ -391,7 +393,7 @@ export default function HomeScreen() {
+                         <View style={styles.toolIconContainer}>
+                             <MaterialCommunityIcons name="water" size={24} color="#0288D1" />
+                         </View>
+-                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>IRRIGATION</Text>
++                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>{t('irrigation')}</Text>
+                     </TouchableOpacity>
+                     <TouchableOpacity
+                         style={styles.toolCard}
+@@ -401,7 +403,7 @@ export default function HomeScreen() {
+                         <View style={styles.toolIconContainer}>
+                             <MaterialCommunityIcons name="flask-outline" size={24} color="#795548" />
+                         </View>
+-                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>SOIL TEST</Text>
++                        <Text style={styles.toolText} numberOfLines={1} adjustsFontSizeToFit>{t('soilTest')}</Text>
+                     </TouchableOpacity>
+                 </View>
+ 
+@@ -450,7 +452,7 @@ export default function HomeScreen() {
+                     <View style={styles.widgetCard}>
+                         <View style={styles.widgetHeaderRow}>
+                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+-                                <Text style={styles.widgetTitle}>Today's Work</Text>
++                                <Text style={styles.widgetTitle}>{t('todaysWork')}</Text>
+                                 {dueTasks.length > 0 && <View style={[styles.notificationDot, { marginLeft: 6 }]} />}
+                             </View>
+                             {dueTasks.length > 1 && (
+@@ -473,17 +475,17 @@ export default function HomeScreen() {
+                             <>
+                                 <TouchableOpacity style={styles.taskRow} onPress={() => router.push('/start-crop')}>
+                                     <MaterialCommunityIcons name="sprout" size={16} color="#00C853" />
+-                                    <Text style={styles.taskText}>Start a crop</Text>
++                                    <Text style={styles.taskText}>{t('startCrop')}</Text>
+                                 </TouchableOpacity>
+                                 <TouchableOpacity style={styles.taskRow} onPress={() => router.push('/fert-calc')}>
+                                     <MaterialCommunityIcons name="calculator" size={16} color="#0288D1" />
+-                                    <Text style={styles.taskText}>Check Agri calc</Text>
++                                    <Text style={styles.taskText}>{t('checkAgriCalc')}</Text>
+                                 </TouchableOpacity>
+                             </>
+                         ) : !randomTask ? (
+                             <View style={{ alignItems: 'center', paddingVertical: 10 }}>
+                                 <MaterialCommunityIcons name="check-circle-outline" size={24} color="#ccc" />
+-                                <Text style={{ fontSize: 12, color: '#888', marginTop: 4 }}>All done for today!</Text>
++                                <Text style={{ fontSize: 12, color: '#888', marginTop: 4 }}>{t('allDoneToday')}</Text>
+                             </View>
+                         ) : (
+                             <View style={styles.randomTaskCard}>
+@@ -537,7 +539,7 @@ export default function HomeScreen() {
+                                     ) : (
+                                         <>
+                                             <MaterialCommunityIcons name="camera" size={20} color="#fff" style={{ marginRight: 6 }} />
+-                                            <Text style={styles.heroButtonLargeText}>Scan Now</Text>
++                                            <Text style={styles.heroButtonLargeText}>{t('scanNow')}</Text>
+                                         </>
+                                     )}
+                                 </View>
+@@ -545,9 +547,9 @@ export default function HomeScreen() {
+                                 {/* Bottom section: Title and Badge Swap */}
+                                 <View style={{ marginTop: 'auto' }}>
+                                     <View style={styles.heroBadge}>
+-                                        <Text style={styles.heroBadgeText}>DIAGNOSTIC</Text>
++                                        <Text style={styles.heroBadgeText}>{t('diagnosticBadge')}</Text>
+                                     </View>
+-                                    <Text style={[styles.tallActionTitle, { marginTop: 8 }]}>Identify plant illness instantly.</Text>
++                                    <Text style={[styles.tallActionTitle, { marginTop: 8 }]}>{t('diagnosticTitle')}</Text>
+                                 </View>
+                             </View>
+                         </ImageBackground>
+@@ -568,15 +570,15 @@ export default function HomeScreen() {
+                                 {/* Swap: Big Start Crop button at the TOP */}
+                                 <View style={[styles.heroButtonLarge, { backgroundColor: '#D84315', alignSelf: 'flex-start' }]}>
+                                     <MaterialCommunityIcons name="seed-outline" size={20} color="#fff" style={{ marginRight: 6 }} />
+-                                    <Text style={styles.heroButtonLargeText}>Start Crop</Text>
++                                    <Text style={styles.heroButtonLargeText}>{t('startCrop')}</Text>
+                                 </View>
+ 
+                                 {/* Bottom section: Title and Badge Swap */}
+                                 <View style={{ marginTop: 'auto' }}>
+                                     <View style={[styles.heroBadge, { backgroundColor: '#E64A19' }]}>
+-                                        <Text style={styles.heroBadgeText}>NEW CROP</Text>
++                                        <Text style={styles.heroBadgeText}>{t('newCropBadge')}</Text>
+                                     </View>
+-                                    <Text style={[styles.tallActionTitle, { marginTop: 8 }]}>Add a new crop to your farm.</Text>
++                                    <Text style={[styles.tallActionTitle, { marginTop: 8 }]}>{t('newCropTitle')}</Text>
+                                 </View>
+                             </View>
+                         </ImageBackground>
+@@ -585,21 +587,21 @@ export default function HomeScreen() {
+ 
+                 {/* Farming News */}
+                 <View style={styles.sectionHeaderRow}>
+-                    <Text style={styles.sectionTitle}>≡ƒî╛ Farming News</Text>
++                    <Text style={styles.sectionTitle}>{t('farmingNews')}</Text>
+                     {newsArticles.length > 0 && (
+-                        <Text style={styles.newsPersonalizedBadge}>Personalized</Text>
++                        <Text style={styles.newsPersonalizedBadge}>{t('personalized')}</Text>
+                     )}
+                 </View>
+ 
+                 {newsLoading ? (
+                     <View style={styles.newsLoadingContainer}>
+                         <ActivityIndicator size="small" color="#00C853" />
+-                        <Text style={styles.newsLoadingText}>Fetching latest news...</Text>
++                        <Text style={styles.newsLoadingText}>{t('fetchingNews')}</Text>
+                     </View>
+                 ) : newsArticles.length === 0 ? (
+                     <View style={styles.newsEmptyContainer}>
+                         <MaterialCommunityIcons name="newspaper-variant-outline" size={36} color="#ccc" />
+-                        <Text style={styles.newsEmptyText}>No news articles yet.{`\n`}Check back soon!</Text>
++                        <Text style={styles.newsEmptyText}>{t('noNews')}</Text>
+                     </View>
+                 ) : (
+                     newsArticles.map((article) => (
+@@ -643,19 +645,19 @@ export default function HomeScreen() {
+ 
+                 {/* Library */}
+                 <View style={[styles.sectionHeaderRow, { marginTop: 16 }]}>
+-                    <Text style={styles.sectionTitle}>≡ƒôÜ Library</Text>
+-                    <Text style={styles.viewAllText}>Explore</Text>
++                    <Text style={styles.sectionTitle}>{t('library')}</Text>
++                    <Text style={styles.viewAllText}>{t('explore')}</Text>
+                 </View>
+ 
+                 {libraryLoading ? (
+                     <View style={styles.newsLoadingContainer}>
+                         <ActivityIndicator size="small" color="#00C853" />
+-                        <Text style={styles.newsLoadingText}>Loading library...</Text>
++                        <Text style={styles.newsLoadingText}>{t('fetchingNews')}</Text>
+                     </View>
+                 ) : libraryArticles.length === 0 ? (
+                     <View style={styles.newsEmptyContainer}>
+                         <MaterialCommunityIcons name="bookshelf" size={36} color="#ccc" />
+-                        <Text style={styles.newsEmptyText}>No articles yet.{`\n`}Check back soon!</Text>
++                        <Text style={styles.newsEmptyText}>{t('noNews')}</Text>
+                     </View>
+                 ) : (
+                     <View style={styles.libraryGrid}>
+diff --git a/frontend/locales/dictionary.js b/frontend/locales/dictionary.js
+index 27674f4..9db3f8b 100644
+--- a/frontend/locales/dictionary.js
++++ b/frontend/locales/dictionary.js
+@@ -14,7 +14,46 @@ export const dictionary = {
+     readyToGrow: "Ready to grow? Track your crops phase by phase and get AI-powered instructions from seed to harvest.",
+     startCrop: "Start a Crop",
+     language: "Language",
+-    selectLanguage: "Select Language"
++    selectLanguage: "Select Language",
++    
++    // Home Screen
++    aiAssistantTitle: "AI Agronomy Assistant",
++    aiAssistantSub: "Ask anything about your crops",
++    seedCalc: "SEED CALC",
++    fertCalc: "FERT CALC",
++    pestDose: "PEST DOSE",
++    irrigation: "IRRIGATION",
++    soilTest: "SOIL TEST",
++    todaysWork: "Today's Work",
++    checkAgriCalc: "Check Agri calc",
++    allDoneToday: "All done for today!",
++    diagnosticBadge: "DIAGNOSTIC",
++    diagnosticTitle: "Identify plant illness instantly.",
++    scanNow: "Scan Now",
++    newCropBadge: "NEW CROP",
++    newCropTitle: "Add a new crop to your farm.",
++    farmingNews: "≡ƒî╛ Farming News",
++    personalized: "Personalized",
++    fetchingNews: "Fetching latest news...",
++    noNews: "No news articles yet.\nCheck back soon!",
++    library: "≡ƒôÜ Library",
++    explore: "Explore",
++
++    // Crops Screen
++    yourCrops: "Your Crops",
++    noActiveCrops: "No Active Crops",
++    noCropsDesc: "You haven't started any crops yet. Tap the + icon to begin your farming journey!",
++    started: "Started",
++    inactive: "Inactive",
++    active: "Active",
++    progress: "Progress",
++    currentPhase: "Current Phase",
++    daysLeft: "days left",
++    waitingTasksDesc: "You can soon start your crop after we create a customised task to do list for you",
++    tasksPending: "Tasks Pending Right Now",
++    noPendingTasks: "Looking good! No pending tasks.",
++    phase: "Phase",
++    workflowInstructions: "Workflow & Instructions"
+   },
+   bn: {
+     profile: "αª¬αºìαª░αºïαª½αª╛αªçαª▓",
+@@ -31,7 +70,44 @@ export const dictionary = {
+     readyToGrow: "αªÜαª╛αª╖ αª╢αºüαª░αºü αªòαª░αªñαºç αª¬αºìαª░αª╕αºìαªñαºüαªñ? αª¬αºìαª░αªñαª┐αªƒαª┐ αªºαª╛αª¬αºç αª½αª╕αª▓αºçαª░ αªƒαºìαª░αºìαª»αª╛αªò αª░αª╛αªûαºüαª¿αÑñ",
+     startCrop: "αª½αª╕αª▓ αª╢αºüαª░αºü αªòαª░αºüαª¿",
+     language: "αª¡αª╛αª╖αª╛",
+-    selectLanguage: "αª¡αª╛αª╖αª╛ αª¿αª┐αª░αºìαª¼αª╛αªÜαª¿ αªòαª░αºüαª¿"
++    selectLanguage: "αª¡αª╛αª╖αª╛ αª¿αª┐αª░αºìαª¼αª╛αªÜαª¿ αªòαª░αºüαª¿",
++
++    aiAssistantTitle: "αªòαºâαª╖αª┐ αª╕αª╣αªòαª╛αª░αºÇ (AI)",
++    aiAssistantSub: "αªåαª¬αª¿αª╛αª░ αª½αª╕αª▓ αª╕αª«αºìαª¬αª░αºìαªòαºç αªòαª┐αª¢αºü αª£αª┐αª£αºìαª₧αª╛αª╕αª╛ αªòαª░αºüαª¿",
++    seedCalc: "αª¼αºÇαª£ αª╣αª┐αª╕αª╛αª¼",
++    fertCalc: "αª╕αª╛αª░ αª╣αª┐αª╕αª╛αª¼",
++    pestDose: "αªòαºÇαªƒαª¿αª╛αª╢αªò αªíαºïαª£",
++    irrigation: "αª╕αºçαªÜ",
++    soilTest: "αª«αª╛αªƒαª┐ αª¬αª░αºÇαªòαºìαª╖αª╛",
++    todaysWork: "αªåαª£αªòαºçαª░ αªòαª╛αª£",
++    checkAgriCalc: "αªòαºìαª»αª╛αª▓αªòαºüαª▓αºçαªƒαª░ αªÜαºçαªò αªòαª░αºüαª¿",
++    allDoneToday: "αªåαª£αªòαºçαª░ αª£αª¿αºìαª» αª╕αª¼ αªòαª╛αª£ αª╢αºçαª╖!",
++    diagnosticBadge: "αª░αºïαªù αª¿αª┐αª░αºìαªúαª»αª╝",
++    diagnosticTitle: "αªùαª╛αª¢αºçαª░ αª░αºïαªù αªñαª╛αºÄαªòαºìαª╖αªúαª┐αªòαª¡αª╛αª¼αºç αªÜαª┐αª╣αºìαª¿αª┐αªñ αªòαª░αºüαª¿αÑñ",
++    scanNow: "αª╕αºìαªòαºìαª»αª╛αª¿ αªòαª░αºüαª¿",
++    newCropBadge: "αª¿αªñαºüαª¿ αª½αª╕αª▓",
++    newCropTitle: "αªåαª¬αª¿αª╛αª░ αªûαª╛αª«αª╛αª░αºç αª¿αªñαºüαª¿ αª½αª╕αª▓ αª»αºïαªù αªòαª░αºüαª¿αÑñ",
++    farmingNews: "≡ƒî╛ αªòαºâαª╖αª┐αª░ αªûαª¼αª░",
++    personalized: "αª¼αºìαª»αªòαºìαªñαª┐αªùαªñαªòαºâαªñ",
++    fetchingNews: "αªûαª¼αª░ αªåαª¿αª╛ αª╣αªÜαºìαª¢αºç...",
++    noNews: "αªÅαªûαª¿αªô αªòαºïαª¿αªô αªûαª¼αª░ αª¿αºçαªçαÑñ\nαª╢αºÇαªÿαºìαª░αªç αª½αª┐αª░αºç αªåαª╕αºüαª¿!",
++    library: "≡ƒôÜ αª▓αª╛αªçαª¼αºìαª░αºçαª░αª┐",
++    explore: "αªàαª¿αºìαª¼αºçαª╖αªú αªòαª░αºüαª¿",
++
++    yourCrops: "αªåαª¬αª¿αª╛αª░ αª½αª╕αª▓",
++    noActiveCrops: "αªòαºïαª¿αºï αª╕αªòαºìαª░αª┐αª»αª╝ αª½αª╕αª▓ αª¿αºçαªç",
++    noCropsDesc: "αªåαª¬αª¿αª┐ αªÅαªûαª¿αªô αªòαºïαª¿αºï αª½αª╕αª▓ αª╢αºüαª░αºü αªòαª░αºçαª¿αª¿αª┐αÑñ αªòαºâαª╖αª┐ αª»αª╛αªñαºìαª░αª╛ αª╢αºüαª░αºü αªòαª░αªñαºç + αªåαªçαªòαª¿αºç αªƒαºìαª»αª╛αª¬ αªòαª░αºüαª¿!",
++    started: "αª╢αºüαª░αºü αª╣αª»αª╝αºçαª¢αºç",
++    inactive: "αª¿αª┐αª╖αºìαªòαºìαª░αª┐αª»αª╝",
++    active: "αª╕αªòαºìαª░αª┐αª»αª╝",
++    progress: "αªàαªùαºìαª░αªùαªñαª┐",
++    currentPhase: "αª¼αª░αºìαªñαª«αª╛αª¿ αªºαª╛αª¬",
++    daysLeft: "αªªαª┐αª¿ αª¼αª╛αªòαª┐",
++    waitingTasksDesc: "αªåαª«αª░αª╛ αªåαª¬αª¿αª╛αª░ αª£αª¿αºìαª» αªÅαªòαªƒαª┐ αªòαª╛αª╕αºìαªƒαª«αª╛αªçαª£αªí αªòαª╛αª£αºçαª░ αªñαª╛αª▓αª┐αªòαª╛ αªñαºêαª░αª┐ αªòαª░αª╛αª░ αª¬αª░ αªåαª¬αª¿αª┐ αª╢αºÇαªÿαºìαª░αªç αªåαª¬αª¿αª╛αª░ αª½αª╕αª▓ αª╢αºüαª░αºü αªòαª░αªñαºç αª¬αª╛αª░αºçαª¿",
++    tasksPending: "αªƒαª┐ αªòαª╛αª£ αª¼αª╛αªòαª┐ αªåαª¢αºç",
++    noPendingTasks: "αªûαºüαª¼ αª¡αª╛αª▓αºï! αªòαºïαª¿αºï αªòαª╛αª£ αª¼αª╛αªòαª┐ αª¿αºçαªçαÑñ",
++    phase: "αªºαª╛αª¬",
++    workflowInstructions: "αªôαºƒαª╛αª░αºìαªòαª½αºìαª▓αºï αªÅαª¼αªé αª¿αª┐αª░αºìαªªαºçαª╢αª╛αª¼αª▓αºÇ"
+   },
+   as: {
+     profile: "αª¬αºìαº░αª½αª╛αªçαª▓",
+@@ -48,7 +124,44 @@ export const dictionary = {
+     readyToGrow: "αªûαºçαªñαª┐ αªòαº░αª┐αª¼αª▓αºê αª╕αª╛αª£αºüαª¿αºç? αª¬αºìαº░αªñαª┐αªƒαºï αª¬αº░αºìαª»αª╛αª»αª╝αªñ αª╢αª╕αºìαª»αº░ αªƒαºìαº░αºçαªò αº░αª╛αªûαªòαÑñ",
+     startCrop: "αª╢αª╕αºìαª» αªåαº░αª«αºìαª¡ αªòαº░αªò",
+     language: "αª¡αª╛αª╖αª╛",
+-    selectLanguage: "αª¡αª╛αª╖αª╛ αª¿αª┐αº░αºìαª¼αª╛αªÜαª¿ αªòαº░αªò"
++    selectLanguage: "αª¡αª╛αª╖αª╛ αª¿αª┐αº░αºìαª¼αª╛αªÜαª¿ αªòαº░αªò",
++
++    aiAssistantTitle: "αªòαºâαª╖αª┐ αª╕αª╣αª╛αª»αª╝αªò (AI)",
++    aiAssistantSub: "αªåαª¬αºïαª¿αª╛αº░ αª╢αª╕αºìαª»αº░ αª¼αª┐αª╖αª»αª╝αºç αª»αª┐αªòαºïαª¿αºï αªòαªÑαª╛ αª╕αºïαªºαªò",
++    seedCalc: "αª¼αºÇαª£ αªùαªúαª¿αª╛",
++    fertCalc: "αª╕αª╛αº░ αªùαªúαª¿αª╛",
++    pestDose: "αªòαºÇαªƒαª¿αª╛αª╢αªò αª¬αª╛αª▓αª┐",
++    irrigation: "αª£αª▓αª╕αª┐αª₧αºìαªÜαª¿",
++    soilTest: "αª«αª╛αªƒαª┐ αª¬αº░αºÇαªòαºìαª╖αª╛",
++    todaysWork: "αªåαª£αª┐αº░ αªòαª╛αª«",
++    checkAgriCalc: "αªòαºçαª▓αªòαºüαª▓αºçαªƒαº░ αª¬αº░αºÇαªòαºìαª╖αª╛ αªòαº░αªò",
++    allDoneToday: "αªåαª£αª┐αº░ αª¼αª╛αª¼αºç αª╕αªòαª▓αºï αªòαª╛αª« αª╢αºçαª╖!",
++    diagnosticBadge: "αº░αºïαªù αª¿αª┐αº░αºìαªúαª»αª╝",
++    diagnosticTitle: "αªùαª¢αº░ αº░αºïαªù αªñαª╛αºÄαªòαºìαª╖αªúαª┐αªòαª¡αª╛αª¼αºç αªÜαª┐αª¿αª╛αªòαºìαªñ αªòαº░αªòαÑñ",
++    scanNow: "αª╕αºìαªòαºçαª¿ αªòαº░αªò",
++    newCropBadge: "αª¿αªñαºüαª¿ αª╢αª╕αºìαª»",
++    newCropTitle: "αªåαª¬αºïαª¿αª╛αº░ αªûαºçαªñαª┐αªñ αª¿αªñαºüαª¿ αª╢αª╕αºìαª» αª»αºïαªù αªòαº░αªòαÑñ",
++    farmingNews: "≡ƒî╛ αªòαºâαª╖αª┐ αª╕αªéαª¼αª╛αªª",
++    personalized: "αª¼αºìαª»αªòαºìαªñαª┐αªùαªñαªòαºâαªñ",
++    fetchingNews: "αª╕αªéαª¼αª╛αªª αªàαª¿αª╛ αª╣αºêαª¢αºç...",
++    noNews: "αªÅαªñαª┐αª»αª╝αª╛αª▓αºê αªòαºïαª¿αºï αª╕αªéαª¼αª╛αªª αª¿αª╛αªçαÑñ\nαª╕αºïαª¿αªòαª╛αª▓αºçαªç αªÿαºéαº░αª┐ αªåαª╣αªò!",
++    library: "≡ƒôÜ αª¬αºüαªÑαª┐αª¡αªüαº░αª╛αª▓",
++    explore: "αªàαª¿αºìαª¼αºçαª╖αªú αªòαº░αªò",
++
++    yourCrops: "αªåαª¬αºïαª¿αª╛αº░ αª╢αª╕αºìαª»",
++    noActiveCrops: "αªòαºïαª¿αºï αª╕αªòαºìαº░αª┐αª»αª╝ αª╢αª╕αºìαª» αª¿αª╛αªç",
++    noCropsDesc: "αªåαª¬αºüαª¿αª┐ αªÅαªñαª┐αª»αª╝αª╛αª▓αºêαªòαºç αªòαºïαª¿αºï αª╢αª╕αºìαª» αªåαº░αª«αºìαª¡ αªòαº░αª╛ αª¿αª╛αªçαÑñ αªûαºçαªñαª┐αº░ αª»αª╛αªñαºìαº░αª╛ αªåαº░αª«αºìαª¡ αªòαº░αª┐αª¼αª▓αºê + αªåαªçαªòαª¿αªƒαºï αªƒαª┐αª¬αªò!",
++    started: "αªåαº░αª«αºìαª¡ αªàαº▒αª╕αºìαªÑαª╛",
++    inactive: "αª¿αª┐αª╖αºìαªòαºìαº░αª┐αª»αª╝",
++    active: "αª╕αªòαºìαº░αª┐αª»αª╝",
++    progress: "αª¬αºìαº░αªùαªñαª┐",
++    currentPhase: "αª¼αº░αºìαªñαª«αª╛αª¿ αª¬αº░αºìαª»αª╛αª»αª╝",
++    daysLeft: "αªªαª┐αª¿ αª¼αª╛αªòαºÇ",
++    waitingTasksDesc: "αªåαª«αª┐ αªåαª¬αºïαª¿αª╛αº░ αª¼αª╛αª¼αºç αªÅαªò αªòαª╛αª╖αºìαªƒαª«αª╛αªçαª£αªí αªòαª╛αª«αº░ αªñαª╛αª▓αª┐αªòαª╛ αª¬αºìαº░αª╕αºìαªñαºüαªñ αªòαº░αª╛αº░ αª¬αª┐αª¢αªñ αªåαª¬αºüαª¿αª┐ αª╕αºïαª¿αªòαª╛αª▓αºçαªç αªåαª¬αºïαª¿αª╛αº░ αª╢αª╕αºìαª» αªåαº░αª«αºìαª¡ αªòαº░αª┐αª¼ αª¬αª╛αº░αª┐αª¼",
++    tasksPending: "αªƒαª╛ αªòαª╛αª« αª¼αª╛αªòαºÇ αªåαª¢αºç",
++    noPendingTasks: "αª¼αªóαª╝αª┐αª»αª╝αª╛! αªòαºïαª¿αºï αªòαª╛αª« αª¼αª╛αªòαºÇ αª¿αª╛αªçαÑñ",
++    phase: "αª¬αº░αºìαª»αª╛αª»αª╝",
++    workflowInstructions: "αªòαª╛αº░αºìαª»αª¬αºìαº░αª¼αª╛αª╣ αªåαº░αºü αª¿αª┐αº░αºìαªªαºçαª╢αª¿αª╛"
+   },
+   hi: {
+     profile: "αñ¬αÑìαñ░αÑïαñ½αñ╝αñ╛αñçαñ▓",
+@@ -65,6 +178,43 @@ export const dictionary = {
+     readyToGrow: "αñòαÑìαñ»αñ╛ αñåαñ¬ αñûαÑçαññαÑÇ αñòαÑç αñ▓αñ┐αñÅ αññαÑêαñ»αñ╛αñ░ αñ╣αÑêαñé? αñÜαñ░αñú αñªαñ░ αñÜαñ░αñú αñàαñ¬αñ¿αÑÇ αñ½αñ╕αñ▓αÑïαñé αñòαÑï αñƒαÑìαñ░αÑêαñò αñòαñ░αÑçαñéαÑñ",
+     startCrop: "αñ½αñ╕αñ▓ αñ╢αÑüαñ░αÑé αñòαñ░αÑçαñé",
+     language: "αñ¡αñ╛αñ╖αñ╛",
+-    selectLanguage: "αñ¡αñ╛αñ╖αñ╛ αñÜαÑüαñ¿αÑçαñé"
++    selectLanguage: "αñ¡αñ╛αñ╖αñ╛ αñÜαÑüαñ¿αÑçαñé",
++
++    aiAssistantTitle: "αñòαÑâαñ╖αñ┐ αñ╕αñ╣αñ╛αñ»αñò (AI)",
++    aiAssistantSub: "αñàαñ¬αñ¿αÑÇ αñ½αñ╕αñ▓αÑïαñé αñòαÑç αñ¼αñ╛αñ░αÑç αñ«αÑçαñé αñòαÑüαñ¢ αñ¡αÑÇ αñ¬αÑéαñ¢αÑçαñé",
++    seedCalc: "αñ¼αÑÇαñ£ αñùαñúαñ¿αñ╛",
++    fertCalc: "αñëαñ░αÑìαñ╡αñ░αñò αñùαñúαñ¿αñ╛",
++    pestDose: "αñòαÑÇαñƒαñ¿αñ╛αñ╢αñò αñûαÑüαñ░αñ╛αñò",
++    irrigation: "αñ╕αñ┐αñéαñÜαñ╛αñê",
++    soilTest: "αñ«αñ┐αñƒαÑìαñƒαÑÇ αñ¬αñ░αÑÇαñòαÑìαñ╖αñú",
++    todaysWork: "αñåαñ£ αñòαñ╛ αñòαñ╛αñ«",
++    checkAgriCalc: "αñòαÑêαñ▓αñòαÑüαñ▓αÑçαñƒαñ░ αñ£αñ╛αñéαñÜαÑçαñé",
++    allDoneToday: "αñåαñ£ αñòαÑç αñ▓αñ┐αñÅ αñ╕αñ¼ αñ╣αÑï αñùαñ»αñ╛!",
++    diagnosticBadge: "αñ░αÑïαñù αñ¿αñ┐αñªαñ╛αñ¿",
++    diagnosticTitle: "αñ¬αÑîαñºαÑïαñé αñòαÑÇ αñ¼αÑÇαñ«αñ╛αñ░αÑÇ αñòαÑï αññαÑüαñ░αñéαññ αñ¬αñ╣αñÜαñ╛αñ¿αÑçαñéαÑñ",
++    scanNow: "αñ╕αÑìαñòαÑêαñ¿ αñòαñ░αÑçαñé",
++    newCropBadge: "αñ¿αñê αñ½αñ╕αñ▓",
++    newCropTitle: "αñàαñ¬αñ¿αÑç αñûαÑçαññ αñ«αÑçαñé αñ¿αñê αñ½αñ╕αñ▓ αñ£αÑïαñíαñ╝αÑçαñéαÑñ",
++    farmingNews: "≡ƒî╛ αñòαÑâαñ╖αñ┐ αñ╕αñ«αñ╛αñÜαñ╛αñ░",
++    personalized: "αñ╡αÑêαñ»αñòαÑìαññαñ┐αñòαÑâαññ",
++    fetchingNews: "αñ╕αñ«αñ╛αñÜαñ╛αñ░ αñ¬αÑìαñ░αñ╛αñ¬αÑìαññ αñòαñ┐αñ»αñ╛ αñ£αñ╛ αñ░αñ╣αñ╛ αñ╣αÑê...",
++    noNews: "αñàαñ¡αÑÇ αñòαÑïαñê αñ╕αñ«αñ╛αñÜαñ╛αñ░ αñ¿αñ╣αÑÇαñé αñ╣αÑêαÑñ\nαñ£αñ▓αÑìαñª αñ╣αÑÇ αñ╡αñ╛αñ¬αñ╕ αñåαñÅαñé!",
++    library: "≡ƒôÜ αñ▓αñ╛αñçαñ¼αÑìαñ░αÑçαñ░αÑÇ",
++    explore: "αñûαÑïαñ£αÑçαñé",
++
++    yourCrops: "αñåαñ¬αñòαÑÇ αñ½αñ╕αñ▓αÑçαñé",
++    noActiveCrops: "αñòαÑïαñê αñ╕αñòαÑìαñ░αñ┐αñ» αñ½αñ╕αñ▓ αñ¿αñ╣αÑÇαñé",
++    noCropsDesc: "αñåαñ¬αñ¿αÑç αñàαñ¡αÑÇ αññαñò αñòαÑïαñê αñ½αñ╕αñ▓ αñ╢αÑüαñ░αÑé αñ¿αñ╣αÑÇαñé αñòαÑÇ αñ╣αÑêαÑñ αñàαñ¬αñ¿αÑÇ αñûαÑçαññαÑÇ αñòαÑÇ αñ»αñ╛αññαÑìαñ░αñ╛ αñ╢αÑüαñ░αÑé αñòαñ░αñ¿αÑç αñòαÑç αñ▓αñ┐αñÅ + αñåαñçαñòαñ¿ αñ¬αñ░ αñƒαÑêαñ¬ αñòαñ░αÑçαñé!",
++    started: "αñ╢αÑüαñ░αÑé αñòαñ┐αñ»αñ╛ αñùαñ»αñ╛",
++    inactive: "αñ¿αñ┐αñ╖αÑìαñòαÑìαñ░αñ┐αñ»",
++    active: "αñ╕αñòαÑìαñ░αñ┐αñ»",
++    progress: "αñ¬αÑìαñ░αñùαññαñ┐",
++    currentPhase: "αñ╡αñ░αÑìαññαñ«αñ╛αñ¿ αñÜαñ░αñú",
++    daysLeft: "αñªαñ┐αñ¿ αñ╢αÑçαñ╖",
++    waitingTasksDesc: "αñ╣αñ« αñåαñ¬αñòαÑç αñ▓αñ┐αñÅ αñòαñ╛αñ░αÑìαñ»αñ╛αññαÑìαñ«αñò αñ╕αÑéαñÜαÑÇ αñ¼αñ¿αñ╛αñ¿αÑç αñòαÑç αñ¼αñ╛αñª αñåαñ¬ αñ£αñ▓αÑìαñª αñ╣αÑÇ αñàαñ¬αñ¿αÑÇ αñ½αñ╕αñ▓ αñ╢αÑüαñ░αÑé αñòαñ░ αñ╕αñòαññαÑç αñ╣αÑêαñé",
++    tasksPending: "αñòαñ╛αñ░αÑìαñ» αñ╢αÑçαñ╖ αñ╣αÑêαñé",
++    noPendingTasks: "αñ¼αñ╣αÑüαññ αñ¼αñóαñ╝αñ┐αñ»αñ╛! αñòαÑïαñê αñ▓αñéαñ¼αñ┐αññ αñòαñ╛αñ░αÑìαñ» αñ¿αñ╣αÑÇαñéαÑñ",
++    phase: "αñÜαñ░αñú",
++    workflowInstructions: "αñ╡αñ░αÑìαñòαñ½αÑìαñ▓αÑï αñöαñ░ αñ¿αñ┐αñ░αÑìαñªαÑçαñ╢"
+   }
+ };

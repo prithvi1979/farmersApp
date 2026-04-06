@@ -4,11 +4,13 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '../../context/LanguageContext';
 
 const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 
 export default function CropsScreen() {
     const router = useRouter();
+    const { t } = useLanguage();
     const [crops, setCrops] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -45,7 +47,7 @@ export default function CropsScreen() {
         return (
             <SafeAreaView style={styles.safeArea}>
                 <View style={styles.header}>
-                    <Text style={styles.headerTitle}>Your Crops</Text>
+                    <Text style={styles.headerTitle}>{t('yourCrops')}</Text>
                 </View>
                 <View style={styles.center}>
                     <ActivityIndicator size="large" color="#00C853" />
@@ -57,7 +59,7 @@ export default function CropsScreen() {
     return (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Your Crops</Text>
+                <Text style={styles.headerTitle}>{t('yourCrops')}</Text>
                 <TouchableOpacity onPress={() => router.push('/start-crop')} style={styles.addButton}>
                     <MaterialCommunityIcons name="plus" size={24} color="#00C853" />
                 </TouchableOpacity>
@@ -71,10 +73,10 @@ export default function CropsScreen() {
                 {crops.length === 0 ? (
                     <View style={styles.emptyContainer}>
                         <MaterialCommunityIcons name="sprout-outline" size={80} color="#ccc" />
-                        <Text style={styles.emptyTitle}>No Active Crops</Text>
-                        <Text style={styles.emptyDesc}>You haven't started any crops yet. Tap the + icon to begin your farming journey!</Text>
+                        <Text style={styles.emptyTitle}>{t('noActiveCrops')}</Text>
+                        <Text style={styles.emptyDesc}>{t('noCropsDesc')}</Text>
                         <TouchableOpacity style={styles.startCropBtn} onPress={() => router.push('/start-crop')}>
-                            <Text style={styles.startCropBtnText}>Start a Crop</Text>
+                            <Text style={styles.startCropBtnText}>{t('startCrop')}</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (
@@ -87,12 +89,12 @@ export default function CropsScreen() {
                                 <View style={styles.cropInfo}>
                                     <Text style={styles.cropName}>{crop.cropName || 'Crop'}</Text>
                                     <Text style={styles.cropStarted}>
-                                        Started: {new Date(crop.startDate).toLocaleDateString()}
+                                        {t('started')}: {new Date(crop.startDate).toLocaleDateString()}
                                     </Text>
                                 </View>
                                 <View style={[styles.statusBadge, crop.status === 'inactive' && { backgroundColor: '#ffebee' }]}>
                                     <Text style={[styles.statusText, crop.status === 'inactive' && { color: '#d32f2f' }]}>
-                                        {crop.status === 'inactive' ? 'Inactive' : 'Active'}
+                                        {crop.status === 'inactive' ? t('inactive') : t('active')}
                                     </Text>
                                 </View>
                             </View>
@@ -101,7 +103,7 @@ export default function CropsScreen() {
                             {crop.status !== 'inactive' && (
                                 <View style={styles.progressContainer}>
                                     <View style={styles.progressHeader}>
-                                        <Text style={styles.progressTitle}>Progress</Text>
+                                        <Text style={styles.progressTitle}>{t('progress')}</Text>
                                         <Text style={styles.progressPercent}>{crop.completionPercentage || 0}%</Text>
                                     </View>
                                     <View style={styles.progressBarBg}>
@@ -109,7 +111,7 @@ export default function CropsScreen() {
                                     </View>
                                     {crop.currentPhaseName && crop.currentPhaseName !== 'N/A' && (
                                         <Text style={styles.phaseInfoText}>
-                                            Current Phase: <Text style={{fontWeight: 'bold', color: '#333'}}>{crop.currentPhaseName}</Text> ({crop.daysRemaining} days left)
+                                            {t('currentPhase')}: <Text style={{fontWeight: 'bold', color: '#333'}}>{crop.currentPhaseName}</Text> ({crop.daysRemaining} {t('daysLeft')})
                                         </Text>
                                     )}
                                 </View>
@@ -119,11 +121,11 @@ export default function CropsScreen() {
                             
                             {crop.status === 'inactive' ? (
                                 <Text style={[styles.taskHeader, { color: '#d32f2f', fontSize: 13, lineHeight: 18, fontStyle: 'italic' }]}>
-                                    You can soon start your crop after we create a customised task to do list for you
+                                    {t('waitingTasksDesc')}
                                 </Text>
                             ) : (
                                 <Text style={styles.taskHeader}>
-                                    {crop.dueTasks && crop.dueTasks.length > 0 ? `${crop.dueTasks.length} Tasks Pending Right Now` : 'Looking good! No pending tasks.'}
+                                    {crop.dueTasks && crop.dueTasks.length > 0 ? `${crop.dueTasks.length} ${t('tasksPending')}` : t('noPendingTasks')}
                                 </Text>
                             )}
 
@@ -132,7 +134,7 @@ export default function CropsScreen() {
                                     <MaterialCommunityIcons name="circle-outline" size={18} color="#f57c00" />
                                     <View style={styles.taskDetails}>
                                         <Text style={styles.taskTitle}>{task.title}</Text>
-                                        {task.phaseName && <Text style={styles.taskPhase}>Phase: {task.phaseName}</Text>}
+                                        {task.phaseName && <Text style={styles.taskPhase}>{t('phase')}: {task.phaseName}</Text>}
                                     </View>
                                 </View>
                             ))}
@@ -142,7 +144,7 @@ export default function CropsScreen() {
                                     style={styles.seeInstructionsBtn}
                                     onPress={() => router.push(`/crop-instructions/${crop._id}`)}
                                 >
-                                    <Text style={styles.seeInstructionsBtnText}>Workflow & Instructions</Text>
+                                    <Text style={styles.seeInstructionsBtnText}>{t('workflowInstructions')}</Text>
                                     <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />
                                 </TouchableOpacity>
                             )}
