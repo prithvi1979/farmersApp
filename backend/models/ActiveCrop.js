@@ -39,6 +39,12 @@ const activeCropSchema = new mongoose.Schema({
     required: true, 
     index: true 
   },
+  // userId links crop to a registered user regardless of deviceId changes
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    index: true
+  },
   cropId: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'MasterCrop' 

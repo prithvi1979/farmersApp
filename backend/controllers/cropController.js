@@ -1,6 +1,7 @@
 const MasterCrop = require('../models/MasterCrop');
 const ActiveCrop = require('../models/ActiveCrop');
 const CropDictionary = require('../models/CropDictionary');
+const User = require('../models/User');
 const mongoose = require('mongoose');
 const https = require('https');
 
@@ -149,6 +150,19 @@ exports.startCrop = async (req, res) => {
     }
 
     const startDate = new Date();
+
+    // Look up the registered user to stamp their _id on the crop
+    // This allows crops to be found by userId even if deviceId changes later
+    let cropUserId = null;
+    try {
+      const cropOwner = await User.findOne({ deviceId });
+      if (cropOwner && cropOwner.status === 'registered') {
+        cropUserId = cropOwner._id;
+      }
+    } catch (e) {
+      // Non-fatal — crop will still be saved with deviceId only
+      console.error('Could not look up user for crop stamping:', e.message);
+    }
     
     // Map MasterCrop phases to ActiveCrop phases
     const activePhases = (masterCrop.phases || []).map((p, pIndex) => {
@@ -181,6 +195,7 @@ exports.startCrop = async (req, res) => {
 
     const activeCrop = new ActiveCrop({
       deviceId,
+      userId: cropUserId,    // stamp userId so crop survives device changes
       cropId: masterCrop._id,
       cropName: finalCropName,
       startDate: startDate,
@@ -205,7 +220,19 @@ exports.startCrop = async (req, res) => {
 exports.getActiveCrops = async (req, res) => {
   try {
     const { deviceId } = req.params;
-    const activeCrops = await ActiveCrop.find({ deviceId, status: { $in: ['active', 'inactive'] } });
+
+    // Build query: match by deviceId OR by userId (if the user is registered).
+    // This ensures crops are visible even after a device/APK change.
+    const query = { status: { $in: ['active', 'inactive'] } };
+    const user = await User.findOne({ deviceId });
+    if (user && user._id) {
+      // Registered user: find by userId (covers old records) OR deviceId (covers guest records)
+      query.$or = [{ deviceId }, { userId: user._id }];
+    } else {
+      query.deviceId = deviceId;
+    }
+
+    const activeCrops = await ActiveCrop.find(query);
 
     // Formatting for the "Today's Work" widget logic, adapted for new schema
     const formattedCrops = activeCrops.map(crop => {
@@ -375,5 +402,36 @@ exports.saveTaskNote = async (req, res) => {
   } catch (error) {
     console.error('Error saving task note:', error);
     res.status(500).json({ success: false, error: 'Server error saving task note' });
+  }
+};
+
+// POST /api/crops/migrate-user-ids
+// One-time migration: stamps userId on all existing ActiveCrop records that
+// belong to a registered user, so they survive any future device/APK change.
+exports.migrateUserIds = async (req, res) => {
+  try {
+    // Find all crops that don't yet have a userId
+    const unlinkedCrops = await ActiveCrop.find({ userId: { $exists: false } });
+    let updated = 0;
+    let skipped = 0;
+
+    for (const crop of unlinkedCrops) {
+      const owner = await User.findOne({ deviceId: crop.deviceId, status: 'registered' });
+      if (owner) {
+        crop.userId = owner._id;
+        await crop.save();
+        updated++;
+      } else {
+        skipped++;
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Migration complete. ${updated} crops linked to users, ${skipped} guest crops skipped.`
+    });
+  } catch (error) {
+    console.error('Error in migrateUserIds:', error);
+    res.status(500).json({ success: false, error: 'Migration failed: ' + error.message });
   }
 };
