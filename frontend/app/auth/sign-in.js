@@ -1,72 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, TouchableOpacity,
   ActivityIndicator, Platform, StatusBar, Alert
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-WebBrowser.maybeCompleteAuthSession();
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
 const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 
-// Web Client ID (browser-based fallback / iOS)
+// Web Client ID — used by the native SDK to request user's ID token
 const GOOGLE_WEB_CLIENT_ID = '485834597416-9v1mmn16ij5silseee9iln6cjnq6drkc.apps.googleusercontent.com';
-// Android Client ID — verified by package name + SHA-1, no proxy needed in native APK
-const GOOGLE_ANDROID_CLIENT_ID = '485834597416-2c8hshtaa6vk1bq4jeamubm65s3hfehv.apps.googleusercontent.com';
+
+// Configure once at module level (not inside component)
+GoogleSignin.configure({
+  webClientId: GOOGLE_WEB_CLIENT_ID,
+  offlineAccess: false,
+  scopes: ['profile', 'email'],
+});
 
 export default function SignInScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: GOOGLE_WEB_CLIENT_ID,
-    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-    scopes: ['profile', 'email'],
-  });
-
-  React.useEffect(() => {
-    if (response?.type === 'success') {
-      const token = response.authentication?.accessToken;
-      if (token) {
-        handleGoogleSuccess(token);
-      } else {
-        setLoading(false);
-        Alert.alert('Sign In Failed', 'Could not retrieve access token. Please try again.');
-      }
-    } else if (response?.type === 'error') {
-      Alert.alert('Sign In Failed', 'Google sign-in was cancelled or failed. Please try again.');
-      setLoading(false);
-    } else if (response?.type === 'cancel') {
-      setLoading(false);
-    }
-  }, [response]);
-
-  const handleGoogleSuccess = async (accessToken) => {
+  const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
+
+      // Check Google Play Services availability
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+
+      // Opens the native Google account picker — no browser, no URI scheme
+      const signInResult = await GoogleSignin.signIn();
+
+      // Extract the ID token (works with both v13 and v14 of the package)
+      const idToken =
+        signInResult?.data?.idToken ||
+        signInResult?.idToken ||
+        null;
+
+      if (!idToken) {
+        throw new Error('Google sign-in completed but no ID token was returned.');
+      }
+
+      // Send the ID token to our backend to verify and create/link the user
       const deviceId = await AsyncStorage.getItem('deviceId') || 'default-device-id';
 
       const res = await fetch(`${API_BASE_URL}/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accessToken, deviceId })
+        body: JSON.stringify({ idToken, deviceId })
       });
       const json = await res.json();
 
       if (json.success) {
-        // Persist auth state and navigate to the Profile tab
         await AsyncStorage.setItem('@user_profile', JSON.stringify(json.data));
         router.replace('/(tabs)/profile');
       } else {
-        Alert.alert('Error', json.error || 'Sign-in failed');
+        Alert.alert('Sign-In Error', json.error || 'Could not sign in. Please try again.');
       }
+
     } catch (err) {
-      Alert.alert('Error', 'Failed to connect to server. Please check your connection.');
-      console.error(err);
+      if (err.code === statusCodes.SIGN_IN_CANCELLED) {
+        // User cancelled — silent, no alert needed
+      } else if (err.code === statusCodes.IN_PROGRESS) {
+        Alert.alert('Please Wait', 'Sign-in is already in progress.');
+      } else if (err.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert('Not Available', 'Google Play Services is required for Google Sign-In.');
+      } else {
+        console.error('Google Sign-In Error:', err);
+        Alert.alert('Sign-In Failed', err.message || 'An unexpected error occurred.');
+      }
     } finally {
       setLoading(false);
     }
@@ -94,9 +99,9 @@ export default function SignInScreen() {
 
         {/* Google Sign-In Button */}
         <TouchableOpacity
-          style={[styles.googleBtn, (!request || loading) && { opacity: 0.6 }]}
-          onPress={() => { setLoading(true); promptAsync(); }}
-          disabled={!request || loading}
+          style={[styles.googleBtn, loading && { opacity: 0.6 }]}
+          onPress={handleGoogleSignIn}
+          disabled={loading}
         >
           {loading ? (
             <ActivityIndicator size="small" color="#333" />
@@ -112,7 +117,7 @@ export default function SignInScreen() {
           By continuing, you agree to our Terms of Service and Privacy Policy.
         </Text>
 
-        {/* Skip / Guest mode */}
+        {/* Guest mode */}
         <TouchableOpacity style={styles.skipBtn} onPress={() => router.back()}>
           <Text style={styles.skipText}>Continue as Guest</Text>
         </TouchableOpacity>
