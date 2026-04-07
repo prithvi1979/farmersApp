@@ -112,36 +112,45 @@ exports.registerUser = async (req, res) => {
         }
     }
 
-    // Check if the name is already taken by a *different* registered user
+    // Find the current device profile first
+    let user = await User.findOne({ deviceId });
+
+    // Block re-registration if this device is already a registered user
+    if (user && user.status === 'registered') {
+      return res.status(409).json({
+        success: false,
+        error: 'An account already exists for this device. Please log in or use Edit Profile to change your details.'
+      });
+    }
+
+    // Check if the name is already taken by ANY registered user (including same device edge cases)
+    const escapedName = name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const existingName = await User.findOne({
-      name: { $regex: new RegExp('^' + name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') },
-      status: 'registered',
-      deviceId: { $ne: deviceId }
+      name: { $regex: new RegExp('^' + escapedName + '$', 'i') },
+      status: 'registered'
     });
     if (existingName) {
       return res.status(409).json({ success: false, error: 'This username is already taken. Please choose a different name or log in instead.' });
     }
 
-    // Find the guest profile
-    let user = await User.findOne({ deviceId });
+    // Check if phone number is already taken by ANY registered user
+    if (phoneNumber) {
+        const cleanedPhone = phoneNumber.toString().replace(/\D/g, '');
+        const existingPhone = await User.findOne({ phoneNumber: cleanedPhone, status: 'registered' });
+        if (existingPhone) {
+            return res.status(409).json({ success: false, error: 'This phone number is already registered to another account. Please log in instead.' });
+        }
+        user.phoneNumber = cleanedPhone;
+    }
 
     if (!user) {
        // If somehow they didn't onboard first, create them directly as registered
        user = new User({ deviceId, status: 'registered' });
     }
 
-    // Check if phone number is already taken by another device
-    if (phoneNumber) {
-        const existingPhone = await User.findOne({ phoneNumber });
-        if (existingPhone && existingPhone.deviceId !== deviceId) {
-            return res.status(409).json({ success: false, error: 'Phone number already registered to another account' });
-        }
-        user.phoneNumber = phoneNumber;
-    }
-
     // Update fields
     user.status = 'registered';
-    user.name = name;
+    user.name = name.trim();
     user.pin = pin;
     if (photoUrl) user.photoUrl = photoUrl;
     if (farmInfo) user.farmInfo = { ...user.farmInfo, ...farmInfo };
@@ -155,6 +164,7 @@ exports.registerUser = async (req, res) => {
     res.status(500).json({ success: false, error: 'Server error during registration' });
   }
 };
+
 
 // POST /api/users/login
 // Purpose: Authenticates phone/name + pin and syncs device ID
