@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash-icon.png",
-      "resizeMode": "cover",
+      "resizeMode": "contain",
       "backgroundColor": "#1a3d1a"
     },
     "ios": {
@@ -29,6 +29,13 @@
     "plugins": [
       "expo-router",
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "49debe1a-43e1-4d45-a2d3-ef6460189be9"
+      }
+    },
+    "owner": "prithvi-farmer"
   }
 }

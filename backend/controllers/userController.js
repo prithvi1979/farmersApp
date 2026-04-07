@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const ActiveCrop = require('../models/ActiveCrop');
 
 // POST /api/users/onboard
 // Purpose: Saves initial Guest Profile (Language, Persona, Plants, Location via IP)
@@ -111,6 +112,16 @@ exports.registerUser = async (req, res) => {
         }
     }
 
+    // Check if the name is already taken by a *different* registered user
+    const existingName = await User.findOne({
+      name: { $regex: new RegExp('^' + name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') },
+      status: 'registered',
+      deviceId: { $ne: deviceId }
+    });
+    if (existingName) {
+      return res.status(409).json({ success: false, error: 'This username is already taken. Please choose a different name or log in instead.' });
+    }
+
     // Find the guest profile
     let user = await User.findOne({ deviceId });
 
@@ -168,10 +179,16 @@ exports.loginUser = async (req, res) => {
 
     // If logging in from a different device, claim the current deviceId
     if (user.deviceId !== deviceId) {
+        const oldDeviceId = user.deviceId;
+
         // Clean up temporary guest profile assigned to this deviceId to free up the unique constraint
         await User.deleteOne({ deviceId, status: 'guest' });
         user.deviceId = deviceId;
         await user.save();
+
+        // Re-link all ActiveCrop records from the old device to the new deviceId
+        // so the user's crop data is not lost when logging in from a new device/APK
+        await ActiveCrop.updateMany({ deviceId: oldDeviceId }, { $set: { deviceId: deviceId } });
     }
 
     res.status(200).json({ success: true, data: user, message: 'Login successful' });
