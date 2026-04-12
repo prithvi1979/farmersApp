@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 export default function HeaderDropdown() {
     const [isVisible, setIsVisible] = useState(false);
+    const router = useRouter();
 
     const toggleMenu = () => {
         setIsVisible(!isVisible);
+    };
+
+    const handleNavigation = (path) => {
+        setIsVisible(false);
+        router.push(path);
     };
 
     return (
@@ -17,20 +24,16 @@ export default function HeaderDropdown() {
 
             {isVisible && (
                 <View style={styles.dropdown}>
-                    <TouchableOpacity style={styles.menuItem} onPress={toggleMenu}>
-                        <Text style={styles.menuText}>Settings</Text>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('/privacy-policy')}>
+                        <Text style={styles.menuText}>Privacy policy</Text>
                     </TouchableOpacity>
                     <View style={styles.divider} />
-                    <TouchableOpacity style={styles.menuItem} onPress={toggleMenu}>
-                        <Text style={styles.menuText}>Find Us</Text>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('/terms-of-service')}>
+                        <Text style={styles.menuText}>Terms of service</Text>
                     </TouchableOpacity>
                     <View style={styles.divider} />
-                    <TouchableOpacity style={styles.menuItem} onPress={toggleMenu}>
-                        <Text style={styles.menuText}>About Us</Text>
-                    </TouchableOpacity>
-                    <View style={styles.divider} />
-                    <TouchableOpacity style={styles.menuItem} onPress={toggleMenu}>
-                        <Text style={styles.menuText}>Privacy</Text>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('/contact-us')}>
+                        <Text style={styles.menuText}>Contact us</Text>
                     </TouchableOpacity>
                 </View>
             )}
