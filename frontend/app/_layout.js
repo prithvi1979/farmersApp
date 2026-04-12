@@ -70,11 +70,11 @@ export default function RootLayout() {
                     ]}
                 >
                     <Animated.Image
-                        source={require('../assets/splash-screen-new.png')}
+                        source={require('../assets/AGRIGROW-splash.png')}
                         style={{
                             width: '100%',
                             height: '100%',
-                            resizeMode: 'cover',
+                            resizeMode: 'contain',
                         }}
                     />
                 </Animated.View>

@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function PersonaScreen() {
     const router = useRouter();
+    const { t } = useLanguage();
 
     const handleSelectPersona = (personaType) => {
         router.push({
@@ -17,14 +19,14 @@ export default function PersonaScreen() {
         <SafeAreaView style={styles.safeArea}>
             <ScrollView contentContainerStyle={styles.container}>
                 <View style={styles.header}>
-                    <Text style={styles.progressText}>Step 2 of 3</Text>
+                    <Text style={styles.progressText}>{t('step2Of3')}</Text>
                 </View>
 
-                <Text style={styles.title}>Tell us about your farm</Text>
-                <Text style={styles.subtitle}>This helps us customize advisory for you.</Text>
+                <Text style={styles.title}>{t('tellUsAboutFarm')}</Text>
+                <Text style={styles.subtitle}>{t('helpsUsCustomize')}</Text>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Which best describes you?</Text>
+                    <Text style={styles.sectionTitle}>{t('whichBestDescribesYou')}</Text>
 
                     <TouchableOpacity
                         style={styles.personaCard}
@@ -34,8 +36,8 @@ export default function PersonaScreen() {
                             <MaterialCommunityIcons name="flower-tulip-outline" size={32} color="#2e7d32" />
                         </View>
                         <View style={styles.personaInfo}>
-                            <Text style={styles.personaTitle}>Apartment / Balcony</Text>
-                            <Text style={styles.personaDesc}>Growing in pots, tubs, or small indoor spaces.</Text>
+                            <Text style={styles.personaTitle}>{t('personaApartment')}</Text>
+                            <Text style={styles.personaDesc}>{t('personaApartmentDesc')}</Text>
                         </View>
                     </TouchableOpacity>
 
@@ -47,8 +49,8 @@ export default function PersonaScreen() {
                             <MaterialCommunityIcons name="sprout-outline" size={32} color="#2e7d32" />
                         </View>
                         <View style={styles.personaInfo}>
-                            <Text style={styles.personaTitle}>Home Gardener</Text>
-                            <Text style={styles.personaDesc}>Backyard planting, raised beds, or small plots.</Text>
+                            <Text style={styles.personaTitle}>{t('personaGardener')}</Text>
+                            <Text style={styles.personaDesc}>{t('personaGardenerDesc')}</Text>
                         </View>
                     </TouchableOpacity>
 
@@ -60,8 +62,8 @@ export default function PersonaScreen() {
                             <MaterialCommunityIcons name="tractor" size={32} color="#2e7d32" />
                         </View>
                         <View style={styles.personaInfo}>
-                            <Text style={styles.personaTitle}>Professional Farmer</Text>
-                            <Text style={styles.personaDesc}>Large acreage, cash crops, commercial farming.</Text>
+                            <Text style={styles.personaTitle}>{t('personaFarmer')}</Text>
+                            <Text style={styles.personaDesc}>{t('personaFarmerDesc')}</Text>
                         </View>
                     </TouchableOpacity>
                 </View>

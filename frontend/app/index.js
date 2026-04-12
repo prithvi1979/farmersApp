@@ -2,9 +2,11 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicat
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function LanguageSelectionScreen() {
     const router = useRouter();
+    const { t, switchLanguage } = useLanguage();
     const [isChecking, setIsChecking] = useState(true);
 
     useEffect(() => {
@@ -24,8 +26,16 @@ export default function LanguageSelectionScreen() {
         checkOnboarding();
     }, []);
 
-    const handleSelectLanguage = (lang) => {
-        // In a real app we would save this to context or storage.
+    const handleSelectLanguage = async (lang) => {
+        const langMap = {
+            'Bengali': 'bn',
+            'Hindi': 'hi',
+            'English': 'en',
+            'Assamese': 'as'
+        };
+        const langCode = langMap[lang] || 'en';
+        
+        await switchLanguage(langCode);
         router.push('/onboarding/persona');
     };
 
@@ -41,12 +51,12 @@ export default function LanguageSelectionScreen() {
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
                 <View style={styles.header}>
-                    <Text style={styles.progressText}>Step 1 of 3</Text>
+                    <Text style={styles.progressText}>{t('step1Of3')}</Text>
                 </View>
 
                 <View style={styles.content}>
-                    <Text style={styles.title}>Choose your language</Text>
-                    <Text style={styles.subtitle}>Select the language you are most comfortable with.</Text>
+                    <Text style={styles.title}>{t('chooseLanguage')}</Text>
+                    <Text style={styles.subtitle}>{t('chooseLanguageDesc')}</Text>
 
                     <View style={styles.buttonContainer}>
                         <TouchableOpacity

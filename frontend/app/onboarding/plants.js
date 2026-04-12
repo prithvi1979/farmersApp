@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Act
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '../../context/LanguageContext';
 
 const CATEGORIES = [
     {
@@ -49,6 +50,7 @@ const CATEGORIES = [
 export default function PlantsScreen() {
     const router = useRouter();
     const { persona } = useLocalSearchParams();
+    const { t, language } = useLanguage();
     const [selectedPlants, setSelectedPlants] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -80,7 +82,7 @@ export default function PlantsScreen() {
 
             const payload = {
                 deviceId,
-                language: 'en',
+                language: language || 'en',
                 persona: persona || 'Gardener',
                 chosenPlants: selectedPlants.map(plant => plant.name)
             };
@@ -114,20 +116,20 @@ export default function PlantsScreen() {
             <View style={styles.container}>
                 <ScrollView contentContainerStyle={styles.scrollContent}>
                     <View style={styles.header}>
-                        <Text style={styles.progressText}>Step 3 of 3</Text>
+                        <Text style={styles.progressText}>{t('step3Of3')}</Text>
                     </View>
 
-                    <Text style={styles.title}>What are you growing?</Text>
-                    <Text style={styles.subtitle}>Select the plants you want to track.</Text>
+                    <Text style={styles.title}>{t('whatAreYouGrowing')}</Text>
+                    <Text style={styles.subtitle}>{t('selectPlantsToTrack')}</Text>
                     
                     <View style={{backgroundColor: '#e8f5e9', padding: 12, borderRadius: 8, marginBottom: 20, flexDirection: 'row', alignItems: 'center'}}>
                         <MaterialCommunityIcons name="information" size={20} color="#2e7d32" style={{marginRight: 8}} />
-                        <Text style={{color: '#2e7d32', fontSize: 13, flex: 1}}>Choose at least 1 plant to proceed. You can edit them later.</Text>
+                        <Text style={{color: '#2e7d32', fontSize: 13, flex: 1}}>{t('chooseAtLeastOnePlant')}</Text>
                     </View>
 
                     {CATEGORIES.map(category => (
                         <View key={category.title} style={styles.categorySection}>
-                            <Text style={styles.categoryTitle}>{category.title}</Text>
+                            <Text style={styles.categoryTitle}>{t('category' + category.title)}</Text>
                             <View style={styles.grid}>
                                 {category.items.map((plant) => {
                                     const isSelected = selectedPlants.some(p => p.id === plant.id);
@@ -169,7 +171,7 @@ export default function PlantsScreen() {
                         {isSaving ? (
                             <ActivityIndicator color="#ffffff" />
                         ) : (
-                            <Text style={styles.finishText}>Finish Setup</Text>
+                            <Text style={styles.finishText}>{t('finishSetup')}</Text>
                         )}
                     </TouchableOpacity>
                 </View>

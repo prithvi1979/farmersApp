@@ -178,7 +178,30 @@ export const dictionary = {
 
     // Home - missed strings
     cropInstructionsGettingReady: "Your CROP instructions are getting ready",
-    viewPendingTasks: "pending tasks"
+    viewPendingTasks: "pending tasks",
+
+    // Onboarding
+    step1Of3: "Step 1 of 3",
+    chooseLanguage: "Choose your language",
+    chooseLanguageDesc: "Select the language you are most comfortable with.",
+    step2Of3: "Step 2 of 3",
+    tellUsAboutFarm: "Tell us about your farm",
+    helpsUsCustomize: "This helps us customize advisory for you.",
+    whichBestDescribesYou: "Which best describes you?",
+    personaApartment: "Apartment / Balcony",
+    personaApartmentDesc: "Growing in pots, tubs, or small indoor spaces.",
+    personaGardener: "Home Gardener",
+    personaGardenerDesc: "Backyard planting, raised beds, or small plots.",
+    personaFarmer: "Professional Farmer",
+    personaFarmerDesc: "Large acreage, cash crops, commercial farming.",
+    step3Of3: "Step 3 of 3",
+    whatAreYouGrowing: "What are you growing?",
+    selectPlantsToTrack: "Select the plants you want to track.",
+    chooseAtLeastOnePlant: "Choose at least 1 plant to proceed. You can edit them later.",
+    finishSetup: "Finish Setup",
+    categoryFlowers: "Flowers",
+    categoryVegetables: "Vegetables",
+    categoryCrops: "Crops"
   },
   bn: {
     profile: "প্রোফাইল",
@@ -339,7 +362,30 @@ export const dictionary = {
     enter4DigitPin: "আপনার ৪ সংখ্যার পিন লিখুন",
     secureLogin: "নিরাপদ লগইন",
     cropInstructionsGettingReady: "আপনার ফসলের নির্দেশনা তৈরি হচ্ছে",
-    viewPendingTasks: "টি কাজ বাকি"
+    viewPendingTasks: "টি কাজ বাকি",
+
+    // Onboarding
+    step1Of3: "ধাপ ১ এর ৩",
+    chooseLanguage: "আপনার ভাষা নির্বাচন করুন",
+    chooseLanguageDesc: "যে ভাষায় আপনি সবচেয়ে স্বাচ্ছন্দ্যবোধ করেন তা নির্বাচন করুন।",
+    step2Of3: "ধাপ ২ এর ৩",
+    tellUsAboutFarm: "আপনার খামার সম্পর্কে আমাদের জানান",
+    helpsUsCustomize: "এটি আমাদের আপনার জন্য পরামর্শ কাস্টমাইজ করতে সাহায্য করে।",
+    whichBestDescribesYou: "কোনটি আপনাকে সবচেয়ে ভালোভাবে বর্ণনা করে?",
+    personaApartment: "অ্যাপার্টমেন্ট / বারান্দা",
+    personaApartmentDesc: "টব বা ছোট অন্দরমহলে জন্মানো হয়।",
+    personaGardener: "বসতবাড়ির মালী",
+    personaGardenerDesc: "পেছনের উঠোনে রোপণ বা ছোট প্লট।",
+    personaFarmer: "পেশাদার কৃষক",
+    personaFarmerDesc: "বড় জমি, অর্থকরী ফসল, বাণিজ্যিক চাষ।",
+    step3Of3: "ধাপ ৩ এর ৩",
+    whatAreYouGrowing: "আপনি কি চাষ করছেন?",
+    selectPlantsToTrack: "যে উদ্ভিদগুলো আপনি ট্র্যাক করতে চান তা নির্বাচন করুন।",
+    chooseAtLeastOnePlant: "এগিয়ে যাওয়ার জন্য অন্তত ১টি উদ্ভিদ চয়ন করুন। আপনি পরে এগুলো সম্পাদনা করতে পারবেন।",
+    finishSetup: "সেটআপ সম্পন্ন করুন",
+    categoryFlowers: "ফুল",
+    categoryVegetables: "সবজি",
+    categoryCrops: "ফসল"
   },
   as: {
     profile: "প্ৰফাইল",
@@ -500,7 +546,30 @@ export const dictionary = {
     enter4DigitPin: "আপোনাৰ ৪ সংখ্যাৰ পিন দিয়ক",
     secureLogin: "নিৰাপদ লগইন",
     cropInstructionsGettingReady: "আপোনাৰ শস্যৰ নিৰ্দেশনা প্ৰস্তুত হৈছে",
-    viewPendingTasks: "টা কাম বাকী"
+    viewPendingTasks: "টা কাম বাকী",
+
+    // Onboarding
+    step1Of3: "পদক্ষেপ ৩ ৰ ১",
+    chooseLanguage: "আপোনাৰ ভাষা বাছক",
+    chooseLanguageDesc: "আপুনি আটাইতকৈ বেছি আৰামদায়ক অনুভৱ কৰা ভাষাটো বাছনি কৰক।",
+    step2Of3: "পদক্ষেপ ৩ ৰ ২",
+    tellUsAboutFarm: "আপোনাৰ খেতিৰ বিষয়ে আমাক জনাওক",
+    helpsUsCustomize: "ইয়াক আমাক আপোনাৰ বাবে পৰামৰ্শ কাষ্টমাইজ কৰাত সহায় কৰে।",
+    whichBestDescribesYou: "যিয়ে আপোনাক আটাইতকৈ ভালকৈ বৰ্ণনা কৰে?",
+    personaApartment: "এপাৰ্টমেন্ট / বেলকনি",
+    personaApartmentDesc: "টাব বা সৰু ভিতৰৰ ঠাইত খেতি কৰিছে।",
+    personaGardener: "ঘৰুৱা মালী",
+    personaGardenerDesc: "পিছফালৰ বাৰী, ৰোপণ বা সৰু প্লট।",
+    personaFarmer: "পেছাদাৰী কৃষক",
+    personaFarmerDesc: "ডাঙৰ মাটি, ব্যৱসায়িক কৃষি।",
+    step3Of3: "পদক্ষেপ ৩ ৰ ৩",
+    whatAreYouGrowing: "আপুনি কি খেতি কৰিছে?",
+    selectPlantsToTrack: "আপুনি ট্ৰেক কৰিবলৈ বিচৰা উদ্ভিদবোৰ বাছনি কৰক।",
+    chooseAtLeastOnePlant: "আগবাঢ়িবলৈ কমেও ১টা উদ্ভিদ বাছক। আপুনি পিছত এইবোৰ সম্পাদনা কৰিব পাৰিব।",
+    finishSetup: "ছেটআপ সম্পূৰ্ণ কৰক",
+    categoryFlowers: "ফুল",
+    categoryVegetables: "শাক-পাচলি",
+    categoryCrops: "শস্য"
   },
   hi: {
     profile: "प्रोफ़ाइल",
@@ -661,6 +730,29 @@ export const dictionary = {
     enter4DigitPin: "अपना 4 अंकों का PIN दर्ज करें",
     secureLogin: "सुरक्षित लॉगिन",
     cropInstructionsGettingReady: "आपकी फसल के निर्देश तैयार हो रहे हैं",
-    viewPendingTasks: "लंबित कार्य"
+    viewPendingTasks: "लंबित कार्य",
+
+    // Onboarding
+    step1Of3: "चरण 3 का 1",
+    chooseLanguage: "अपनी भाषा चुनें",
+    chooseLanguageDesc: "वह भाषा चुनें जिसमें आप सबसे आरामदायक महसूस करते हैं।",
+    step2Of3: "चरण 3 का 2",
+    tellUsAboutFarm: "अपने खेत के बारे में बताएं",
+    helpsUsCustomize: "यह हमें आपके लिए सलाह को अनुकूलित करने में मदद करता है।",
+    whichBestDescribesYou: "कौन सा आपको सबसे अच्छे तरीके से वर्णित करता है?",
+    personaApartment: "अपार्टमेंट / बालकनी",
+    personaApartmentDesc: "गमलों, टबों या छोटे इनडोर स्थानों में उगाना।",
+    personaGardener: "घरेलू माली",
+    personaGardenerDesc: "घर के आंगन में रोपण या छोटे प्लॉट।",
+    personaFarmer: "पेशेवर किसान",
+    personaFarmerDesc: "बड़े क्षेत्र, नकदी फसलें, व्यावसायिक खेती।",
+    step3Of3: "चरण 3 का 3",
+    whatAreYouGrowing: "आप क्या उगा रहे हैं?",
+    selectPlantsToTrack: "उन पौधों का चयन करें जिन्हें आप ट्रैक करना चाहते हैं।",
+    chooseAtLeastOnePlant: "आगे बढ़ने के लिए कम से कम 1 पौधा चुनें। आप इन्हें बाद में संपादित कर सकते हैं।",
+    finishSetup: "सेटअप पूरा करें",
+    categoryFlowers: "फूल",
+    categoryVegetables: "सब्जियां",
+    categoryCrops: "फसलें"
   }
 };

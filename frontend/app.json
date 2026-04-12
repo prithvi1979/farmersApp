@@ -8,8 +8,8 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash-screen-new.png",
-      "resizeMode": "cover",
+      "image": "./assets/AGRIGROW-splash.png",
+      "resizeMode": "contain",
       "backgroundColor": "#1a3d1a"
     },
     "ios": {
