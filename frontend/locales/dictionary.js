@@ -15,6 +15,7 @@ export const dictionary = {
     startCrop: "Start a Crop",
     language: "Language",
     selectLanguage: "Select Language",
+    home: "Home",
     
     // Home Screen
     aiAssistantTitle: "AI Agronomy Assistant",
@@ -195,6 +196,7 @@ export const dictionary = {
     startCrop: "ফসল শুরু করুন",
     language: "ভাষা",
     selectLanguage: "ভাষা নির্বাচন করুন",
+    home: "হোম",
 
     aiAssistantTitle: "কৃষি সহকারী (AI)",
     aiAssistantSub: "আপনার ফসল সম্পর্কে কিছু জিজ্ঞাসা করুন",
@@ -355,6 +357,7 @@ export const dictionary = {
     startCrop: "শস্য আৰম্ভ কৰক",
     language: "ভাষা",
     selectLanguage: "ভাষা নিৰ্বাচন কৰক",
+    home: "হোম",
 
     aiAssistantTitle: "কৃষি সহায়ক (AI)",
     aiAssistantSub: "আপোনাৰ শস্যৰ বিষয়ে যিকোনো কথা সোধক",
@@ -515,6 +518,7 @@ export const dictionary = {
     startCrop: "फसल शुरू करें",
     language: "भाषा",
     selectLanguage: "भाषा चुनें",
+    home: "होम",
 
     aiAssistantTitle: "कृषि सहायक (AI)",
     aiAssistantSub: "अपनी फसलों के बारे में कुछ भी पूछें",

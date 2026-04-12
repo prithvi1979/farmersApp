@@ -1,9 +1,11 @@
 import { Tabs } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function TabLayout() {
     const insets = useSafeAreaInsets();
+    const { t } = useLanguage();
 
     return (
         <Tabs
@@ -28,7 +30,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: 'Home',
+                    title: t('home'),
                     tabBarIcon: ({ color }) => (
                         <MaterialCommunityIcons name="home" size={26} color={color} />
                     ),
@@ -37,7 +39,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="community"
                 options={{
-                    title: 'Community',
+                    title: t('community'),
                     tabBarIcon: ({ color }) => (
                         <MaterialCommunityIcons name="account-group" size={26} color={color} />
                     ),
@@ -46,7 +48,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="market"
                 options={{
-                    title: 'Market',
+                    title: t('market'),
                     tabBarIcon: ({ color }) => (
                         <MaterialCommunityIcons name="storefront" size={26} color={color} />
                     ),
@@ -55,7 +57,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="crops"
                 options={{
-                    title: 'Your Crops',
+                    title: t('yourCrops'),
                     tabBarIcon: ({ color }) => (
                         <MaterialCommunityIcons name="sprout" size={26} color={color} />
                     ),
@@ -64,7 +66,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="profile"
                 options={{
-                    title: 'Profile',
+                    title: t('profile'),
                     tabBarIcon: ({ color }) => (
                         <MaterialCommunityIcons name="account" size={26} color={color} />
                     ),
