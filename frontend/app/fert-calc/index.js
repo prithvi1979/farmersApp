@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import CropAutofillInput from '../../components/CropAutofillInput';
@@ -59,6 +60,7 @@ const GENERIC_NPK = { N: 80, P: 40, K: 40 };
 
 export default function FertCalcScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [mode, setMode] = useState('field');
     const [selectedCropId, setSelectedCropId] = useState('');
     const [selectedCropName, setSelectedCropName] = useState('');
@@ -172,7 +174,7 @@ export default function FertCalcScreen() {
                 </ScrollView>
 
                 {/* Bottom Action */}
-                <View style={styles.bottomBar}>
+                <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom + 16, 24) }]}>
                     <TouchableOpacity
                         style={[
                             styles.nextButton,
@@ -373,7 +375,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderTopWidth: 1,
         borderTopColor: '#f0f0f0',
-        paddingBottom: Platform.OS === 'android' ? 32 : Platform.OS === 'ios' ? 32 : 16,
     },
     nextButton: {
         backgroundColor: '#00C853',

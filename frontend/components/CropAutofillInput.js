@@ -8,6 +8,7 @@ import {
     StyleSheet,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 
@@ -37,7 +38,23 @@ export default function CropAutofillInput({
     const [loading, setLoading] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
     const [selected, setSelected] = useState(null); // { _id, name } or null
+    const [localDictionary, setLocalDictionary] = useState([]);
     const debounceRef = useRef(null);
+
+    // Load dictionary once when component mounts
+    React.useEffect(() => {
+        const loadDictionary = async () => {
+            try {
+                const stored = await AsyncStorage.getItem('@crop_dictionary');
+                if (stored) {
+                    setLocalDictionary(JSON.parse(stored));
+                }
+            } catch (e) {
+                console.log('Error loading local crop dictionary', e);
+            }
+        };
+        loadDictionary();
+    }, []);
 
     const handleChange = (text) => {
         setQuery(text);
@@ -53,22 +70,32 @@ export default function CropAutofillInput({
             return;
         }
 
-        debounceRef.current = setTimeout(async () => {
-            setLoading(true);
-            try {
-                const res = await fetch(
-                    `${API_BASE_URL}/crops/search?q=${encodeURIComponent(text.trim())}`
-                );
-                const json = await res.json();
-                if (json.success) {
-                    setSuggestions(json.data.slice(0, 6));
+        // Fast Local Search (Instant)
+        if (localDictionary && localDictionary.length > 0) {
+            const lowerQuery = text.trim().toLowerCase();
+            const matches = localDictionary
+                .filter(crop => crop.name.toLowerCase().includes(lowerQuery))
+                .slice(0, 6);
+            setSuggestions(matches);
+        } else {
+            // Fallback to remote if dictionary hasn't synced yet
+            debounceRef.current = setTimeout(async () => {
+                setLoading(true);
+                try {
+                    const res = await fetch(
+                        `${API_BASE_URL}/crops/search?q=${encodeURIComponent(text.trim())}`
+                    );
+                    const json = await res.json();
+                    if (json.success) {
+                        setSuggestions(json.data.slice(0, 6));
+                    }
+                } catch (e) {
+                    console.log('CropAutofill search error:', e);
+                } finally {
+                    setLoading(false);
                 }
-            } catch (e) {
-                console.log('CropAutofill search error:', e);
-            } finally {
-                setLoading(false);
-            }
-        }, 380);
+            }, 380);
+        }
     };
 
     const handlePick = (crop) => {

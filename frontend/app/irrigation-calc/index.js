@@ -3,13 +3,16 @@ import {
     View,
     Text,
     StyleSheet,
-    SafeAreaView,
+    View,
+    Text,
+    StyleSheet,
     ScrollView,
     TouchableOpacity,
     TextInput,
     Platform,
     StatusBar
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import CropAutofillInput from '../../components/CropAutofillInput';
@@ -64,6 +67,7 @@ const IRRIGATION_METHODS = [
 
 export default function IrrigationCalculatorScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
 
     // Form State
     const [selectedCrop, setSelectedCrop] = useState(null); // { name }
@@ -120,7 +124,7 @@ export default function IrrigationCalculatorScreen() {
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom + 40, 60) }]} showsVerticalScrollIndicator={false}>
 
                 {/* 1. Crop Selection */}
                 <View style={[styles.section, styles.card]}>

@@ -24,57 +24,114 @@ exports.diagnosePlant = async (req, res) => {
 
         const prompt = "You are an expert plant pathologist. Analyze this plant image and return ONLY a valid JSON object with two keys: 'disease' (string — name of the disease or 'Healthy' if none found) and 'cure' (string — recommended treatment or care steps, max 3 sentences). Do not include markdown or extra text. Example: {\"disease\": \"Tomato Blight\", \"cure\": \"Remove infected leaves and apply copper fungicide.\"}";
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                contents: [
-                    {
-                        parts: [
-                            { text: prompt },
-                            {
-                                inlineData: {
-                                    mimeType: mimeType || "image/jpeg",
-                                    data: base64Data
-                                }
-                            }
-                        ]
-                    }
-                ],
-                generationConfig: {
-                    response_mime_type: "application/json",
-                }
-            })
-        });
-
-        const result = await response.json();
-        
-        if (!response.ok) {
-            console.error('Gemini API Error:', result);
-            return res.status(500).json({ success: false, error: result.error?.message || 'Failed to analyze image with AI' });
-        }
-
-        const aiResponseText = result.candidates[0].content.parts[0].text;
-        
         try {
-            // Because we passed response_mime_type: "application/json", Gemini usually returns pure JSON
-            const parsedData = JSON.parse(aiResponseText);
-            return res.json({ success: true, data: parsedData });
-        } catch (parseError) {
-            console.error('Failed to parse AI response:', aiResponseText);
-            // Fallback: Use regex to extract JSON if it was wrapped in markdown ```json ... ```
-            const jsonMatch = aiResponseText.match(/{[\s\S]*}/);
-            if (jsonMatch) {
-                try {
-                    const extractedData = JSON.parse(jsonMatch[0]);
-                    return res.json({ success: true, data: extractedData });
-                } catch (e) {
-                    return res.status(500).json({ success: false, error: 'Invalid format received from AI' });
-                }
+            // PRIMARY ATTEMPT: Gemini Flash
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [
+                        {
+                            parts: [
+                                { text: prompt },
+                                {
+                                    inlineData: {
+                                        mimeType: mimeType || "image/jpeg",
+                                        data: base64Data
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    generationConfig: {
+                        response_mime_type: "application/json",
+                    }
+                })
+            });
+
+            const result = await response.json();
+            
+            if (!response.ok) {
+                console.error('Gemini API Error:', result);
+                throw new Error(result.error?.message || 'Failed to analyze image with Gemini AI');
             }
-            return res.status(500).json({ success: false, error: 'Invalid format received from AI' });
+
+            const aiResponseText = result.candidates[0].content.parts[0].text;
+            
+            try {
+                // Because we passed response_mime_type: "application/json", Gemini usually returns pure JSON
+                const parsedData = JSON.parse(aiResponseText);
+                return res.json({ success: true, data: parsedData });
+            } catch (parseError) {
+                console.error('Failed to parse Gemini AI response:', aiResponseText);
+                const jsonMatch = aiResponseText.match(/{[\s\S]*}/);
+                if (jsonMatch) {
+                    try {
+                        const extractedData = JSON.parse(jsonMatch[0]);
+                        return res.json({ success: true, data: extractedData });
+                    } catch (e) {
+                         throw new Error('Invalid JSON format received from Gemini AI');
+                    }
+                }
+                throw new Error('Invalid JSON format received from Gemini AI');
+            }
+
+        } catch (primaryError) {
+            console.warn('Gemini failed, switching to Groq Fallback...', primaryError.message);
+
+            // FALLBACK ATTEMPT: Groq Llama 3.2 Vision
+            const groqKey = process.env.GROQ_API_KEY;
+            if (!groqKey) throw new Error('No Groq fallback key available');
+
+            const actualMimeType = mimeType || "image/jpeg";
+            const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${groqKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: "llama-3.2-90b-vision-preview",
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: prompt },
+                                { type: "image_url", image_url: { url: `data:${actualMimeType};base64,${base64Data}` } }
+                            ]
+                        }
+                    ],
+                    response_format: { type: "json_object" }
+                })
+            });
+
+            if (!groqResponse.ok) {
+                const groqErr = await groqResponse.json();
+                console.error('Groq API Error:', groqErr);
+                return res.status(500).json({ success: false, error: 'Both primary and fallback AI models are busy.' });
+            }
+
+            const groqData = await groqResponse.json();
+            const groqText = groqData.choices[0].message.content;
+            
+            try {
+                const parsedData = JSON.parse(groqText);
+                return res.json({ success: true, data: parsedData });
+            } catch (fallbackParseError) {
+                console.error('Failed to parse Groq AI response:', groqText);
+                const jsonMatch = groqText.match(/{[\s\S]*}/);
+                if (jsonMatch) {
+                    try {
+                        const extractedData = JSON.parse(jsonMatch[0]);
+                        return res.json({ success: true, data: extractedData });
+                    } catch (e) {
+                        return res.status(500).json({ success: false, error: 'Invalid format received from AI' });
+                    }
+                }
+                return res.status(500).json({ success: false, error: 'Invalid format received from AI' });
+            }
         }
         
     } catch (error) {

@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, Platform, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, Platform, StatusBar, KeyboardAvoidingView, Keyboard } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
@@ -10,6 +11,7 @@ const API_BASE_URL = 'https://farmersapp-333z.onrender.com/api';
 export default function MandiCheckerScreen() {
     const router = useRouter();
     const { t } = useLanguage();
+    const insets = useSafeAreaInsets();
 
     // Auto-suggest fields
     const [searchQuery, setSearchQuery] = useState('');
@@ -64,6 +66,9 @@ export default function MandiCheckerScreen() {
             Alert.alert('Error', 'Please select or enter a crop name first.');
             return;
         }
+
+        // Proactively dismiss keyboard when checking so the permission dialog doesn't cause glitches.
+        Keyboard.dismiss();
 
         setLoadingResult(true);
         setMandiResult(null);
@@ -125,8 +130,9 @@ export default function MandiCheckerScreen() {
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-                <View style={styles.formCard}>
+            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+                <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom + 60, 100) }]} keyboardShouldPersistTaps="handled">
+                    <View style={styles.formCard}>
                     <View style={styles.iconHeader}>
                         <View style={styles.iconBg}>
                             <MaterialCommunityIcons name="currency-inr" size={32} color="#00C853" />
@@ -221,7 +227,8 @@ export default function MandiCheckerScreen() {
                     </View>
                 )}
 
-            </ScrollView>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }

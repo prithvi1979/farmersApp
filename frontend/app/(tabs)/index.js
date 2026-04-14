@@ -100,6 +100,16 @@ export default function HomeScreen() {
 
         const fetchNews = async () => {
             try {
+                const cachedNews = await AsyncStorage.getItem('@cached_news_data');
+                if (cachedNews) {
+                    try {
+                        setNewsArticles(JSON.parse(cachedNews));
+                        setNewsLoading(false);
+                    } catch (e) {
+                         console.error('Error parsing cached news', e);
+                    }
+                }
+
                 const deviceId = await AsyncStorage.getItem('deviceId');
                 const url = deviceId
                     ? `${API_BASE_URL}/content/news?deviceId=${deviceId}`
@@ -108,6 +118,7 @@ export default function HomeScreen() {
                 const json = await res.json();
                 if (json.success && json.data) {
                     setNewsArticles(json.data);
+                    await AsyncStorage.setItem('@cached_news_data', JSON.stringify(json.data));
                 }
             } catch (err) {
                 console.log('News fetch error:', err.message);
@@ -118,10 +129,22 @@ export default function HomeScreen() {
 
         const fetchLibrary = async () => {
             try {
+                const cachedLibrary = await AsyncStorage.getItem('@cached_library_data');
+                if (cachedLibrary) {
+                    try {
+                        setLibraryArticles(JSON.parse(cachedLibrary));
+                        setLibraryLoading(false);
+                    } catch (e) {
+                         console.error('Error parsing cached library', e);
+                    }
+                }
+
                 const res = await fetch(`${API_BASE_URL}/content/library`);
                 const json = await res.json();
                 if (json.success && json.data) {
-                    setLibraryArticles(json.data.slice(0, 4));
+                    const slicedData = json.data.slice(0, 4);
+                    setLibraryArticles(slicedData);
+                    await AsyncStorage.setItem('@cached_library_data', JSON.stringify(slicedData));
                 }
             } catch (err) {
                 console.log('Library fetch error:', err.message);

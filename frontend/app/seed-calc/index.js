@@ -3,13 +3,16 @@ import {
     View,
     Text,
     StyleSheet,
-    SafeAreaView,
+    View,
+    Text,
+    StyleSheet,
     ScrollView,
     TouchableOpacity,
     TextInput,
     Platform,
     StatusBar
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import CropAutofillInput from '../../components/CropAutofillInput';
@@ -57,6 +60,7 @@ const AREA_UNITS = ['Acre', 'Hectare', 'Sq Meter'];
 
 export default function SeedCalculatorScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
 
     // Form State
     const [selectedCrop, setSelectedCrop] = useState(null); // { _id, name }
@@ -110,7 +114,7 @@ export default function SeedCalculatorScreen() {
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom + 40, 60) }]} showsVerticalScrollIndicator={false}>
 
                 {/* 1. Crop Selection */}
                 <View style={[styles.section, styles.card]}>

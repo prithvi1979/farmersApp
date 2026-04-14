@@ -112,6 +112,16 @@ exports.searchMasterCrops = async (req, res) => {
   }
 };
 
+exports.getAllDictionaryCrops = async (req, res) => {
+  try {
+    const crops = await CropDictionary.find({}).select('_id name').lean();
+    res.status(200).json({ success: true, data: crops });
+  } catch (error) {
+    console.error('Error fetching crop dictionary:', error);
+    res.status(500).json({ success: false, error: 'Server error fetching crop dictionary' });
+  }
+};
+
 exports.startCrop = async (req, res) => {
   try {
     const { deviceId, masterCropId, customName, totalArea, areaUnit, farmingMethod, soilType } = req.body;

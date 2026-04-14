@@ -3,7 +3,9 @@ import {
     View,
     Text,
     StyleSheet,
-    SafeAreaView,
+    View,
+    Text,
+    StyleSheet,
     ScrollView,
     TouchableOpacity,
     TextInput,
@@ -11,6 +13,7 @@ import {
     StatusBar,
     Modal
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import CropAutofillInput from '../../components/CropAutofillInput';
@@ -29,6 +32,7 @@ const AREA_UNITS = ['Acre', 'Hectare', 'Sq Meter'];
 
 export default function PesticideCalculatorScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
 
     // Form State
     const [selectedCropName, setSelectedCropName] = useState('');
@@ -76,7 +80,7 @@ export default function PesticideCalculatorScreen() {
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom + 40, 60) }]} showsVerticalScrollIndicator={false}>
 
                 {/* 1. Crop Selection */}
                 <View style={styles.section}>

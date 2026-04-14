@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -51,6 +52,7 @@ export default function PlantsScreen() {
     const router = useRouter();
     const { persona } = useLocalSearchParams();
     const { t, language } = useLanguage();
+    const insets = useSafeAreaInsets();
     const [selectedPlants, setSelectedPlants] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -162,7 +164,7 @@ export default function PlantsScreen() {
                     
                 </ScrollView>
 
-                <View style={styles.footer}>
+                <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom + 16, 20) }]}>
                     <TouchableOpacity
                         style={[styles.finishButton, selectedPlants.length === 0 && styles.finishButtonDisabled]}
                         onPress={handleFinish}
